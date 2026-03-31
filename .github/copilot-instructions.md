@@ -6,13 +6,13 @@ En Progressive Web App (PWA) der viser NOAHs afdelinger og grupper på et intera
 
 ## 2. Tech Stack
 
-- **Next.js 15** – React-baseret framework med god SEO og performance
+- **Next.js 16** – React-baseret framework med god SEO og performance
 - **shadcn/ui + Tailwind CSS** – Moderne, tilgængelige UI-komponenter
 - **Lucide Icons** – Open source ikoner via lucide-react
 - **MapLibre GL JS** + **Protomaps** – Open source vektor-kort med self-hosted tiles
 - **REST API** (dokumenteret i Postman) – Interface til POI-data
-- **Cloudflare Pages** – Hosting med automatisk SSL og hurtig CDN
-- **GitHub** – Versionsstyring med automatisk deploy til Cloudflare Pages
+- **Cloudflare Workers** (via @opennextjs/cloudflare) – Hosting med automatisk SSL og hurtig CDN
+- **GitHub** – Versionsstyring med automatisk deploy til Cloudflare via GitHub Actions
 - **Serwist** (next-pwa) – Service worker til offline-support og installerbar app
 - **Cloudflare Web Analytics** (valgfrit) – Privacy-venlig analytics uden cookies (GDPR-compliant)
 
