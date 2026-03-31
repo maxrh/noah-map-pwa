@@ -6,7 +6,7 @@ En Progressive Web App (PWA) der viser NOAHs afdelinger og grupper på et intera
 
 ## 2. Tech Stack
 
-- **Next.js 14** – React-baseret framework med god SEO og performance
+- **Next.js 15** – React-baseret framework med god SEO og performance
 - **shadcn/ui + Tailwind CSS** – Moderne, tilgængelige UI-komponenter
 - **Lucide Icons** – Open source ikoner via lucide-react
 - **MapLibre GL JS** + **Protomaps** – Open source vektor-kort med self-hosted tiles
