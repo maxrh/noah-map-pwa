@@ -4,8 +4,6 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 initOpenNextCloudflareForDev();
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  serverExternalPackages: ["esbuild", "esbuild-wasm"],
-};
+const nextConfig = {};
 
 export default withSerwist(nextConfig);
