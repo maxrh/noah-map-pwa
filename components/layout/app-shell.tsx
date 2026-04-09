@@ -9,7 +9,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
 
   return (
-    <div className="flex flex-col h-dvh text-foreground overflow-hidden">
+    <div className="flex flex-col h-dvh text-foreground">
         {/* Main Navigation */}
       <Header />
 
