@@ -13,8 +13,8 @@ const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY;
 const BRAND_COLOR = "#00ae5a";
 
 // Denmark center coordinates
-const DENMARK_CENTER: [number, number] = [10.45, 56.0];
-const INITIAL_ZOOM = 7.5;
+const DENMARK_CENTER: [number, number] = [10.45, 55.6];
+const INITIAL_ZOOM = 5.7;
 
 function createMarkerElement(): HTMLElement {
   const el = document.createElement("div");
