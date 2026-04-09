@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, type ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 import { useSearch } from "@/lib/search-context";
 
 export function Header() {
@@ -67,7 +68,7 @@ export function Header() {
             <InputGroupInput
               placeholder="Søg..."
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
               onFocus={() => setFocused(true)}
               onBlur={() => {
                 blurTimeout.current = setTimeout(() => setFocused(false), 150);
@@ -79,7 +80,7 @@ export function Header() {
           </InputGroup>
 
           {showSuggestions && (
-            <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover shadow-lg overflow-hidden">
+            <ul role="listbox" aria-label="Søgeforslag" className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover shadow-lg overflow-hidden">
               {suggestions.map((g) => (
                 <li key={g.slug}>
                   <button
@@ -103,7 +104,7 @@ export function Header() {
       )}
 
       <div
-        className={`flex items-center gap-1 ${isDetailPage ? "ml-auto" : ""} shrink-0`}
+        className={cn("flex items-center gap-1 shrink-0", isDetailPage && "ml-auto")}
       >
         {isDetailPage && (
           <Link
@@ -118,10 +119,10 @@ export function Header() {
         <Link
           href="/liste"
           aria-label="Listevisning"
-          className={
-            buttonVariants({ variant: "ghost", size: "icon" }) +
-            " bg-neutral-100  hover:bg-neutral-200"
-          }
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon" }),
+            "bg-neutral-100 hover:bg-neutral-200"
+          )}
         >
           <List className="h-5 w-5" />
         </Link>
