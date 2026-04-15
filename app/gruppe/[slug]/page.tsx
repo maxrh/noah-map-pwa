@@ -13,7 +13,7 @@ import {
   TypographyMuted,
 } from "@/components/ui/typography";
 import { Badge } from "@/components/ui/badge";
-import { MoveRight } from "lucide-react";
+import { MoveRight, MapPin } from "lucide-react";
 
 export default function GroupDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -78,11 +78,16 @@ export default function GroupDetailPage() {
             {group.description}
           </TypographyP>
 
-          {group.link && (
-            <a href={group.link} target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="mt-6">Besøg hjemmeside <MoveRight /></Button>
-            </a>
-          )}
+          <div className="flex flex-wrap gap-1 mt-6">
+            <Link href={`/?flyTo=${group.slug}`}>
+              <Button size="lg" variant="secondary"><MapPin /> Vis på kort</Button>
+            </Link>
+            {group.link && (
+              <Link href={group.link} target="_blank" rel="noopener noreferrer">
+                <Button size="lg">Besøg hjemmeside <MoveRight /></Button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>

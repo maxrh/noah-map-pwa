@@ -1,53 +1,15 @@
 "use client";
 
-import { useRef, useState, useMemo, type ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { List, MoveLeft, Search } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Info, List, MoveLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
-import { useSearch } from "@/lib/search-context";
 
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const isDetailPage = pathname.startsWith("/gruppe/");
-  const { query, setQuery, groups, flyTo } = useSearch();
-  const [focused, setFocused] = useState(false);
-  const blurTimeout = useRef<ReturnType<typeof setTimeout>>(null);
-
-  const suggestions = useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return groups
-      .filter(
-        (g) =>
-          g.name.toLowerCase().includes(q) ||
-          g.address.toLowerCase().includes(q) ||
-          g.category.toLowerCase().includes(q)
-      )
-      .slice(0, 6);
-  }, [groups, query]);
-
-  const showSuggestions = focused && suggestions.length > 0;
-
-  function handleSelect(slug: string) {
-    setQuery("");
-    setFocused(false);
-    if (pathname !== "/") {
-      router.push("/");
-      // flyTo after navigation — small delay for map to mount
-      setTimeout(() => flyTo(slug), 500);
-    } else {
-      flyTo(slug);
-    }
-  }
 
   return (
     <header className="flex items-center gap-4 px-4 h-14 border-b bg-background shrink-0">
@@ -62,49 +24,8 @@ export function Header() {
         />
       </Link>
 
-      {!isDetailPage && (
-        <div className="relative max-w-sm w-full ml-auto">
-          <InputGroup>
-            <InputGroupInput
-              placeholder="Søg..."
-              value={query}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => {
-                blurTimeout.current = setTimeout(() => setFocused(false), 150);
-              }}
-            />
-            <InputGroupAddon align="inline-end">
-              <Search className="h-4 w-4" />
-            </InputGroupAddon>
-          </InputGroup>
-
-          {showSuggestions && (
-            <ul role="listbox" aria-label="Søgeforslag" className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover shadow-lg overflow-hidden">
-              {suggestions.map((g) => (
-                <li key={g.slug}>
-                  <button
-                    type="button"
-                    className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors cursor-pointer"
-                    onMouseDown={() => {
-                      if (blurTimeout.current) clearTimeout(blurTimeout.current);
-                    }}
-                    onClick={() => handleSelect(g.slug)}
-                  >
-                    <p className="text-sm font-medium truncate">{g.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {g.address}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
       <div
-        className={cn("flex items-center gap-1 shrink-0", isDetailPage && "ml-auto")}
+        className={cn("flex items-center gap-1 shrink-0 ml-auto")}
       >
         {isDetailPage && (
           <Link
@@ -125,6 +46,16 @@ export function Header() {
           )}
         >
           <List className="h-5 w-5" />
+        </Link>
+        <Link
+          href="/om"
+          aria-label="Om NOAH"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon" }),
+            "bg-neutral-100 hover:bg-neutral-200"
+          )}
+        >
+          <Info className="h-5 w-5" />
         </Link>
       </div>
     </header>
