@@ -1,9 +1,19 @@
-import { withSerwist } from "@serwist/turbopack";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import withSerwistInit from "@serwist/next";
 
-initOpenNextCloudflareForDev();
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+  register: false,
+  reloadOnOnline: false,
+  globPublicPatterns: ["**/*.{png,jpg,jpeg,svg,webp,ico,json,webmanifest}"],
+});
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  output: "export",
+  images: { unoptimized: true },
+  turbopack: {},
+};
 
 export default withSerwist(nextConfig);

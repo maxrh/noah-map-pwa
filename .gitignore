@@ -31,13 +31,10 @@ yarn-error.log*
 # vercel
 .vercel
 
-# opennext
-.open-next
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# Serwist
+# serwist (generated service worker)
 public/sw*
 public/swe-worker*
