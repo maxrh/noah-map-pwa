@@ -5,6 +5,7 @@ import Link from "next/link";
 import { fetchGroups, type Group } from "@/lib/groups";
 import { MoveRight } from "lucide-react";
 import { useSearch } from "@/lib/search-context";
+import { SearchBar } from "@/components/layout/search-bar";
 
 export default function ListePage() {
   const [groups, setLocalGroups] = useState<Group[]>([]);
@@ -17,7 +18,7 @@ export default function ListePage() {
         setLocalGroups(g);
         setContextGroups(g);
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to fetch groups:", err))
       .finally(() => setLoading(false));
   }, [setContextGroups]);
 
@@ -43,6 +44,7 @@ export default function ListePage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
+      <SearchBar />
       <ul className="divide-y divide-border">
         {filtered.map((group) => (
           <li key={group.slug}>

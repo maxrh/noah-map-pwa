@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { layers, namedFlavor } from "@protomaps/basemaps";
+import { icons as lucideIcons } from "lucide";
 import { fetchGroups, type Group } from "@/lib/groups";
 import { useSearch } from "@/lib/search-context";
 import { MapControls } from "./map-controls";
@@ -10,28 +11,50 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY;
 
-const BRAND_COLOR = "#00ae5a";
-
 // Denmark center coordinates
 const DENMARK_CENTER: [number, number] = [10.45, 55.6];
 const INITIAL_ZOOM = 5.7;
 
-function createMarkerElement(): HTMLElement {
+function kebabToPascal(str: string): string {
+  return str
+    .split("-")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join("");
+}
+
+function getIconSvg(iconName: string): string {
+  const pascalName = kebabToPascal(iconName);
+  const iconData = lucideIcons[pascalName as keyof typeof lucideIcons];
+  if (!iconData) return "";
+  const children = iconData
+    .map(([tag, attrs]) => {
+      const attrStr = Object.entries(attrs)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(" ");
+      return `<${tag} ${attrStr}/>`;
+    })
+    .join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${children}</svg>`;
+}
+
+function createMarkerElement(iconName?: string): HTMLElement {
   const el = document.createElement("div");
   el.className = "poi-marker";
-  el.style.width = "32px";
-  el.style.height = "32px";
+  el.style.width = "36px";
+  el.style.height = "36px";
   el.style.borderRadius = "50%";
-  el.style.backgroundColor = BRAND_COLOR;
-  el.style.border = "2px solid white";
-  el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+  el.style.backgroundColor = "#00ae5a";
+  el.style.border = "1px solid #168c49";
+  el.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
   el.style.cursor = "pointer";
   el.style.display = "flex";
   el.style.alignItems = "center";
   el.style.justifyContent = "center";
 
-  // Leaf icon (SVG)
-  el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.9C15.5 4.9 17 3.5 19 2c1 2 2 4.5 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>`;
+  const svg = iconName ? getIconSvg(iconName) : "";
+  if (svg) {
+    el.innerHTML = svg;
+  }
   return el;
 }
 
@@ -40,20 +63,26 @@ interface MarkerEntry {
   group: Group;
 }
 
+function escapeHtml(str: string): string {
+  const div = document.createElement("div");
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
 function addMarkers(map: maplibregl.Map, groups: Group[]): MarkerEntry[] {
   const entries: MarkerEntry[] = [];
   for (const group of groups) {
     if (!group.lat || !group.lng) continue;
 
-    const el = createMarkerElement();
+    const el = createMarkerElement(group.categoryIcon);
 
     const popup = new maplibregl.Popup({ offset: 20, closeButton: false }).setHTML(
       `<div style="font-family:'Roboto',sans-serif">
-        <h2 style="margin:0 0 8px;font-size:18px;font-weight:bold;line-height:1.3">${group.name}</h2>
-        <p style="margin:4px 0;font-size:13px">${group.address}</p>
-        <p style="margin:4px 0 8px;font-size:12px;color:#666">${group.category}</p>
+        <h2 style="margin:0 0 8px;font-size:18px;font-weight:bold;line-height:1.3">${escapeHtml(group.name)}</h2>
+        <p style="margin:4px 0;font-size:13px">${escapeHtml(group.address)}</p>
+        <p style="margin:4px 0 8px;font-size:12px;color:#666">${escapeHtml(group.category)}</p>
         <div style="text-align:right">
-          <a href="/gruppe/${group.slug}" style="display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 10px;font-size:13px;font-weight:500;border-radius:4px;border:1px solid #e2e2e2;color:#333;text-decoration:none;transition:background 0.15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">Læs mere</a>
+          <a href="/gruppe/${encodeURIComponent(group.slug)}" style="display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 10px;font-size:13px;font-weight:500;border-radius:4px;border:1px solid #e2e2e2;color:#333;text-decoration:none;transition:background 0.15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">Læs mere</a>
         </div>
       </div>`
     );
@@ -97,6 +126,7 @@ export function Map() {
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
+      attributionControl: false,
       container: mapContainerRef.current,
       style: {
         version: 8,
