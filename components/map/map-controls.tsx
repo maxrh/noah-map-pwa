@@ -55,29 +55,30 @@ export function MapControls({ map }: MapControlsProps) {
   return (
     <div className="flex flex-col gap-0.5">
       <Button
-        variant="ghost"
+        variant="default"
         size="icon"
         onClick={handleZoomIn}
         aria-label="Zoom ind"
-        className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground"
+        title="Zoom ind"
       >
         <Plus className="size-4" />
       </Button>
       <Button
-        variant="ghost"
+        variant="default"
         size="icon"
         onClick={handleZoomOut}
         aria-label="Zoom ud"
-        className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground mb-2"
+        title="Zoom ud"
+        className="mb-2"
       >
         <Minus className="size-4" />
       </Button>
       <Button
-        variant="ghost"
+        variant="default"
         size="icon"
         onClick={handleResetNorth}
         aria-label="Nulstil retning"
-        className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground"
+        title="Nulstil retning"
       >
         <Compass
           className="size-4"
@@ -85,11 +86,11 @@ export function MapControls({ map }: MapControlsProps) {
         />
       </Button>
       <Button
-        variant="ghost"
+        variant="default"
         size="icon"
         onClick={handleLocate}
         aria-label="Find min placering"
-        className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground"
+        title="Find min placering"
         disabled={locating}
       >
         <LocateFixed className={`size-4 ${locating ? "animate-pulse" : ""}`} />

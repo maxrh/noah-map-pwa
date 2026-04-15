@@ -7,12 +7,19 @@ import { Info, List, MoveLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function Header() {
+export function Header({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
   const isDetailPage = pathname.startsWith("/gruppe/");
 
   return (
-    <header className="flex items-center gap-4 px-4 h-14 border-b bg-background shrink-0">
+    <header
+      className={cn(
+        "flex items-center gap-4 px-4 h-14 shrink-0 z-40",
+        transparent
+          ? "bg-transparent"
+          : "bg-background border-b"
+      )}
+    >
       <Link href="/" className="flex items-center gap-2 shrink-0">
         <Image
           src="/Logo_NOAH_2020_small.png"
@@ -20,7 +27,7 @@ export function Header() {
           width={650}
           height={265}
           priority
-          className="h-8 w-auto"
+          className="h-11 w-auto -translate-y-px"
         />
       </Link>
 
@@ -31,6 +38,7 @@ export function Header() {
           <Link
             href="/"
             aria-label="Tilbage til kort"
+            title="Tilbage til kort"
             className={buttonVariants({ variant: "link" })}
           >
             <MoveLeft className="h-5 w-5" />
@@ -40,20 +48,16 @@ export function Header() {
         <Link
           href="/liste"
           aria-label="Listevisning"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "icon" }),
-            "bg-neutral-100 hover:bg-neutral-200"
-          )}
+          title="Listevisning"
+          className={buttonVariants({ variant: "default", size: "icon" })}
         >
           <List className="h-5 w-5" />
         </Link>
         <Link
           href="/om"
-          aria-label="Om NOAH"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "icon" }),
-            "bg-neutral-100 hover:bg-neutral-200"
-          )}
+          aria-label="Om appen"
+          title="Om appen"
+          className={buttonVariants({ variant: "default", size: "icon" })}
         >
           <Info className="h-5 w-5" />
         </Link>

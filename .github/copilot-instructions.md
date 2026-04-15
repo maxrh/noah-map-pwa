@@ -11,7 +11,7 @@ En Progressive Web App (PWA) der viser NOAHs afdelinger og grupper på et intera
 - **Lucide Icons** – Open source ikoner via lucide-react
 - **MapLibre GL JS** + **Protomaps** – Open source vektor-kort med self-hosted tiles
 - **REST API** (dokumenteret i Postman) – Interface til POI-data
-- **Cloudflare Workers** (via @opennextjs/cloudflare) – Hosting med automatisk SSL og hurtig CDN
+- **Cloudflare Pages** (statisk eksport) – Hosting med automatisk SSL og hurtig CDN
 - **GitHub** – Versionsstyring med automatisk deploy til Cloudflare via GitHub Actions
 - **Serwist** (next-pwa) – Service worker til offline-support og installerbar app
 - **Cloudflare Web Analytics** (valgfrit) – Privacy-venlig analytics uden cookies (GDPR-compliant)

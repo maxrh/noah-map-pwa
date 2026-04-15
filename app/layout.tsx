@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Roboto } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { SearchProvider } from "@/lib/search-context";
-import { SerwistProvider } from "./serwist-provider";
+import { PwaInit } from "./pwa-init";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -54,11 +54,10 @@ export default function RootLayout({
   return (
     <html lang="da" className={roboto.variable}>
       <body className={`${roboto.className} antialiased`}>
-        <SerwistProvider swUrl="/serwist/sw.js">
-          <SearchProvider>
-            <AppShell>{children}</AppShell>
-          </SearchProvider>
-        </SerwistProvider>
+        <PwaInit />
+        <SearchProvider>
+          <AppShell>{children}</AppShell>
+        </SearchProvider>
       </body>
     </html>
   );
