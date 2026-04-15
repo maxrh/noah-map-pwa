@@ -12,7 +12,7 @@ import {
   TypographyP,
   TypographyMuted,
 } from "@/components/ui/typography";
-import { Badge } from "@/components/ui/badge";
+import { CategoryBadge } from "@/components/ui/category-badge";
 import { MoveRight, MapPin } from "lucide-react";
 
 export default function GroupDetailPage() {
@@ -66,9 +66,11 @@ export default function GroupDetailPage() {
       {/* Right side – scrollable content */}
       <div className="flex-1 overflow-y-auto p-6 md:p-10">
         <div className="max-w-xl mx-auto">
-          <Badge variant="secondary" className="mb-6">
-            {group.category}
-          </Badge>
+          <CategoryBadge
+            category={group.category}
+            iconName={group.categoryIcon}
+            className="mb-6"
+          />
 
           <TypographyH1 className="mb-3">{group.name}</TypographyH1>
 
@@ -84,7 +86,7 @@ export default function GroupDetailPage() {
             </Link>
             {group.link && (
               <Link href={group.link} target="_blank" rel="noopener noreferrer">
-                <Button size="lg">Besøg hjemmeside <MoveRight /></Button>
+                <Button size="lg" variant="secondary">Besøg hjemmeside <MoveRight /></Button>
               </Link>
             )}
           </div>

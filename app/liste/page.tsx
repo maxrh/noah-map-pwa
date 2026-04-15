@@ -44,7 +44,7 @@ export default function ListePage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <SearchBar />
+      <SearchBar className="fixed bottom-4 left-0 right-0 z-50" />
       <ul className="divide-y divide-border">
         {filtered.map((group) => (
           <li key={group.slug}>

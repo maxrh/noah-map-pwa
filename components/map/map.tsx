@@ -44,8 +44,8 @@ function createMarkerElement(iconName?: string): HTMLElement {
   el.style.height = "36px";
   el.style.borderRadius = "50%";
   el.style.backgroundColor = "#00ae5a";
-  el.style.border = "1px solid #168c49";
-  el.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+  el.style.border = "2px solid white";
+  el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
   el.style.cursor = "pointer";
   el.style.display = "flex";
   el.style.alignItems = "center";
@@ -102,7 +102,7 @@ export function Map() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<MarkerEntry[]>([]);
   const [mapReady, setMapReady] = useState(false);
-  const { query, setGroups, registerFlyTo } = useSearch();
+  const { query, setGroups, selectedCategory, registerFlyTo } = useSearch();
 
   const handleFlyTo = useCallback((slug: string) => {
     const map = mapRef.current;
@@ -178,29 +178,28 @@ export function Map() {
     };
   }, []);
 
-  // Filter markers based on search query
+  // Filter markers based on search query and selected category
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const q = query.toLowerCase().trim();
     for (const { marker, group } of markersRef.current) {
-      if (!q) {
-        if (!marker.getLngLat()) continue;
-        marker.addTo(map);
-        continue;
-      }
-      const match =
+      const matchesCategory =
+        !selectedCategory || group.category === selectedCategory;
+      const matchesQuery =
+        !q ||
         group.name.toLowerCase().includes(q) ||
         group.address.toLowerCase().includes(q) ||
         group.description.toLowerCase().includes(q) ||
         group.category.toLowerCase().includes(q);
-      if (match) {
+
+      if (matchesCategory && matchesQuery) {
         marker.addTo(map);
       } else {
         marker.remove();
       }
     }
-  }, [query]);
+  }, [query, selectedCategory]);
 
   return (
     <>

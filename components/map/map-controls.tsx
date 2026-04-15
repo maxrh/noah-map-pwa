@@ -59,6 +59,7 @@ export function MapControls({ map }: MapControlsProps) {
         size="icon"
         onClick={handleZoomIn}
         aria-label="Zoom ind"
+        title="Zoom ind"
         className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground"
       >
         <Plus className="size-4" />
@@ -68,6 +69,7 @@ export function MapControls({ map }: MapControlsProps) {
         size="icon"
         onClick={handleZoomOut}
         aria-label="Zoom ud"
+        title="Zoom ud"
         className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground mb-2"
       >
         <Minus className="size-4" />
@@ -77,6 +79,7 @@ export function MapControls({ map }: MapControlsProps) {
         size="icon"
         onClick={handleResetNorth}
         aria-label="Nulstil retning"
+        title="Nulstil retning"
         className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground"
       >
         <Compass
@@ -89,6 +92,7 @@ export function MapControls({ map }: MapControlsProps) {
         size="icon"
         onClick={handleLocate}
         aria-label="Find min placering"
+        title="Find min placering"
         className="shadow-md bg-accent text-accent-foreground hover:bg-primary hover:text-accent-foreground"
         disabled={locating}
       >

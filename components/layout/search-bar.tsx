@@ -9,8 +9,9 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { useSearch } from "@/lib/search-context";
+import { cn } from "@/lib/utils";
 
-export function SearchBar() {
+export function SearchBar({ className }: { className?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { query, setQuery, groups, flyTo } = useSearch();
@@ -44,9 +45,9 @@ export function SearchBar() {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 right-6 z-50 mx-auto max-w-md">
+    <div className={cn("px-4", className)}>
       <div className="relative">
-        <InputGroup className="shadow-lg border border-border h-12">
+        <InputGroup className="shadow-lg h-12 bg-stone-50">
           <InputGroupInput
             placeholder="Søg..."
             value={query}
