@@ -47,7 +47,7 @@ export function SearchBar({ className }: { className?: string }) {
   return (
     <div className={cn("px-4", className)}>
       <div className="relative">
-        <InputGroup className="shadow-lg h-12 bg-stone-50">
+        <InputGroup className="shadow-lg h-12 bg-secondary">
           <InputGroupInput
             placeholder="Søg..."
             value={query}

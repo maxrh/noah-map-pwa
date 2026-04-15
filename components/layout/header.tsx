@@ -49,10 +49,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           href="/liste"
           aria-label="Listevisning"
           title="Listevisning"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "icon" }),
-            "bg-neutral-100 hover:bg-neutral-200"
-          )}
+          className={buttonVariants({ variant: "default", size: "icon" })}
         >
           <List className="h-5 w-5" />
         </Link>
@@ -60,10 +57,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           href="/om"
           aria-label="Om appen"
           title="Om appen"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "icon" }),
-            "bg-neutral-100 hover:bg-neutral-200"
-          )}
+          className={buttonVariants({ variant: "default", size: "icon" })}
         >
           <Info className="h-5 w-5" />
         </Link>
