@@ -10,10 +10,6 @@ const withSerwist = withSerwistInit({
 });
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: "export",
-  images: { unoptimized: true },
-  turbopack: {},
-};
+const nextConfig = {};
 
 export default withSerwist(nextConfig);

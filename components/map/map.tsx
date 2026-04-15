@@ -7,7 +7,6 @@ import { icons as lucideIcons } from "lucide";
 import { fetchGroups, type Group } from "@/lib/groups";
 import { useSearch } from "@/lib/search-context";
 import { MapControls } from "./map-controls";
-import "maplibre-gl/dist/maplibre-gl.css";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY;
 const SOURCE_ID = "groups";
