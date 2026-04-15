@@ -1,3 +1,4 @@
 name = "noah-app"
 compatibility_date = "2025-01-03"
-pages_build_output_dir = "out"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
