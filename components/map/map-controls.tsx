@@ -7,10 +7,10 @@ import type maplibregl from "maplibre-gl";
 
 interface MapControlsProps {
   map: maplibregl.Map | null;
+  geolocate: maplibregl.GeolocateControl | null;
 }
 
-export function MapControls({ map }: MapControlsProps) {
-  const [locating, setLocating] = useState(false);
+export function MapControls({ map, geolocate }: MapControlsProps) {
   const [bearing, setBearing] = useState(0);
 
   useEffect(() => {
@@ -19,6 +19,13 @@ export function MapControls({ map }: MapControlsProps) {
     map.on("rotate", onRotate);
     return () => { map.off("rotate", onRotate); };
   }, [map]);
+
+  // Hide the native geolocate control button (we use our own)
+  useEffect(() => {
+    if (!geolocate) return;
+    const el = (geolocate as unknown as { _container?: HTMLElement })._container;
+    if (el) el.style.display = "none";
+  }, [geolocate]);
 
   const handleZoomIn = () => {
     map?.zoomIn({ duration: 300 });
@@ -33,23 +40,7 @@ export function MapControls({ map }: MapControlsProps) {
   };
 
   const handleLocate = () => {
-    if (!map || !navigator.geolocation) return;
-    setLocating(true);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        map.flyTo({
-          center: [position.coords.longitude, position.coords.latitude],
-          zoom: 12,
-          duration: 1500,
-        });
-        setLocating(false);
-      },
-      () => {
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+    geolocate?.trigger();
   };
 
   return (
@@ -91,9 +82,8 @@ export function MapControls({ map }: MapControlsProps) {
         onClick={handleLocate}
         aria-label="Find min placering"
         title="Find min placering"
-        disabled={locating}
       >
-        <LocateFixed className={`size-4 ${locating ? "animate-pulse" : ""}`} />
+        <LocateFixed className="size-4" />
       </Button>
     </div>
   );
