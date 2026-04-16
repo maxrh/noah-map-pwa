@@ -16,7 +16,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="relative flex flex-col h-dvh text-foreground">
       <Header transparent={isMapPage} />
 
-      <main className={cn("flex-1 min-h-0 flex flex-col", isMapPage && "-mt-16")}>
+      <main className={cn("flex-1 min-h-0 flex flex-col", isMapPage && "-mt-19")}>
         {children}
       </main>
     </div>

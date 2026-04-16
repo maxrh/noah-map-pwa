@@ -6,7 +6,8 @@ import { layers, namedFlavor } from "@protomaps/basemaps";
 import { icons as lucideIcons } from "lucide";
 import type { Group } from "@/lib/groups";
 import { useSearch } from "@/lib/search-context";
-import { MapControls } from "./map-controls";
+import { cn } from "@/lib/utils";
+import { CompassControl, replaceControlIcons } from "./map-controls";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY;
 const SOURCE_ID = "groups";
@@ -112,7 +113,7 @@ export function Map() {
   const markersOnScreen = useRef<Record<string, maplibregl.Marker>>({});
   const validSlugs = useRef<Set<string>>(new Set());
   const rafId = useRef<number>(0);
-  const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null);
+  const compassRef = useRef<CompassControl | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const { query, groups, selectedCategory, registerFlyTo } = useSearch();
 
@@ -254,13 +255,27 @@ export function Map() {
 
     mapRef.current = map;
 
+    // Native zoom controls (top-right)
+    map.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      "top-right"
+    );
+
+    // Native geolocate control (top-right, same group)
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
       trackUserLocation: true,
       showUserLocation: true,
     });
-    geolocateRef.current = geolocate;
-    map.addControl(geolocate);
+    map.addControl(geolocate, "top-right");
+
+    // Inject compass button into the geolocate control group
+    const compass = new CompassControl(map);
+    compass.injectInto(mapContainerRef.current!);
+    compassRef.current = compass;
+
+    // Replace default MapLibre icons with Lucide SVGs
+    replaceControlIcons(mapContainerRef.current!);
 
     map.on("load", () => {
       map.resize();
@@ -354,6 +369,8 @@ export function Map() {
 
     return () => {
       resizeObserver.disconnect();
+      compassRef.current?.destroy();
+      compassRef.current = null;
       map.remove();
       mapRef.current = null;
       groupsRef.current = [];
@@ -378,18 +395,14 @@ export function Map() {
   }, [groups, mapReady, updateSource, updateMarkers]);
 
   return (
-    <>
-      <div
-        ref={mapContainerRef}
-        className="flex-1 w-full"
-        role="application"
-        aria-label="Kort over NOAHs afdelinger"
-      />
-      {mapReady && (
-        <div className="fixed top-18 right-4 z-50">
-          <MapControls map={mapRef.current} geolocate={geolocateRef.current} />
-        </div>
+    <div
+      ref={mapContainerRef}
+      className={cn(
+        "flex-1 w-full transition-opacity duration-500 ease-out",
+        mapReady ? "opacity-100" : "opacity-0"
       )}
-    </>
+      role="application"
+      aria-label="Kort over NOAHs afdelinger"
+    />
   );
 }
