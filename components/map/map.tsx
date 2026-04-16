@@ -24,7 +24,7 @@ function kebabToPascal(str: string): string {
     .join("");
 }
 
-function getIconSvg(iconName: string): string {
+function getIconSvg(iconName: string, size = 18, stroke = "white"): string {
   const pascalName = kebabToPascal(iconName);
   const iconData = lucideIcons[pascalName as keyof typeof lucideIcons];
   if (!iconData) return "";
@@ -36,7 +36,7 @@ function getIconSvg(iconName: string): string {
       return `<${tag} ${attrStr}/>`;
     })
     .join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${children}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${children}</svg>`;
 }
 
 function createMarkerElement(iconName?: string): HTMLElement {
@@ -93,15 +93,15 @@ function createPopupHTML(props: {
   name: string;
   address: string;
   category: string;
+  categoryIcon?: string;
   slug: string;
 }): string {
+  const iconSvg = props.categoryIcon ? getIconSvg(props.categoryIcon, 14, "currentColor") : "";
   return `<div style="font-family:'Roboto',sans-serif">
-    <h2 style="margin:0 0 8px;font-size:18px;font-weight:bold;line-height:1.3">${escapeHtml(props.name)}</h2>
-    <p style="margin:4px 0;font-size:13px">${escapeHtml(props.address)}</p>
-    <p style="margin:4px 0 8px;font-size:12px;color:#666">${escapeHtml(props.category)}</p>
-    <div style="text-align:right">
-      <a href="/gruppe/${encodeURIComponent(props.slug)}" style="display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 10px;font-size:13px;font-weight:500;border-radius:4px;border:1px solid #e2e2e2;color:#333;text-decoration:none;transition:background 0.15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">Læs mere</a>
-    </div>
+    <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 6px;border-radius:9999px;background:#f5f5f5;font-size:12px;font-weight:500;color:#555;margin-bottom:16px">${iconSvg}${escapeHtml(props.category)}</div>
+    <h2 style="margin:0 0 4px;font-size:18px;font-weight:bold;line-height:1.3">${escapeHtml(props.name)}</h2>
+    <p style="margin:0 0 16px;font-size:13px">${escapeHtml(props.address)}</p>
+    <a href="/gruppe/${encodeURIComponent(props.slug)}" style="display:inline-flex;align-items:center;justify-content:center;width:100%;height:32px;padding:0 10px;font-size:13px;font-weight:500;background:#f5f5f5;color:#1a1a1a;text-decoration:none;transition:background 0.15s;border:none;outline:none" onmouseover="this.style.background='#ebebeb'" onmouseout="this.style.background='#f5f5f5'">Læs mere</a>
   </div>`;
 }
 
@@ -173,7 +173,7 @@ export function Map() {
       if (!marker) {
         const el = createMarkerElement(props.categoryIcon);
         const popup = new maplibregl.Popup({ offset: 20, closeButton: false })
-          .setHTML(createPopupHTML(props as { name: string; address: string; category: string; slug: string }));
+          .setHTML(createPopupHTML(props as { name: string; address: string; category: string; categoryIcon?: string; slug: string }));
 
         marker = new maplibregl.Marker({ element: el })
           .setLngLat(coords)

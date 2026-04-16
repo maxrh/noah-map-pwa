@@ -76,7 +76,7 @@ export default function GroupDetailPage() {
             <span className="text-muted-foreground text-sm">Indlæser...</span>
           </Skeleton>
         </div>
-        <div className="flex-1 p-6 md:p-10">
+        <div className="flex-1 p-6 md:p-12">
           <div className="max-w-xl mx-auto">
             <Skeleton className="h-8 w-28 rounded-4xl mb-10" />
             <Skeleton className="h-9 w-3/4 mb-3" />
@@ -118,7 +118,7 @@ export default function GroupDetailPage() {
       </div>
 
       {/* Right side – scrollable content */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-10 animate-in fade-in duration-300">
+      <div className="flex-1 overflow-y-auto p-6 md:p-12 animate-in fade-in duration-300">
         <div className="max-w-xl mx-auto">
           <CategoryBadge
             category={group.category}

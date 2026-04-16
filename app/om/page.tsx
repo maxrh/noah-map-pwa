@@ -1,4 +1,5 @@
 import { Separator } from "@/components/ui/separator";
+import { TypographyH1, TypographyP } from "@/components/ui/typography";
 
 function formatBuildTime(iso: string) {
   const d = new Date(iso);
@@ -11,13 +12,14 @@ function formatBuildTime(iso: string) {
 
 export default function OmPage() {
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Om appen</h1>
-      <p className="text-muted-foreground">
-        Denne app viser NOAHs afdelinger og grupper på et interaktivt kort over
-        Danmark. Udforsk NOAHs lokale tilstedeværelse, find nærmeste afdeling,
-        og få oplysninger om hver gruppe.
-      </p>
+    <div className="flex-1 overflow-y-auto p-6 md:p-12">
+      <div className="max-w-xl mx-auto">
+        <TypographyH1 className="mb-3">Om appen</TypographyH1>
+        <TypographyP>
+          Denne app viser NOAHs afdelinger og grupper på et interaktivt kort over
+          Danmark. Udforsk NOAHs lokale tilstedeværelse, find nærmeste afdeling,
+          og få oplysninger om hver gruppe.
+        </TypographyP>
 
       <div className="my-16" />
 
@@ -74,6 +76,7 @@ export default function OmPage() {
           <dd className="font-medium">MIT</dd>
         </div>
       </dl>
+      </div>
     </div>
   );
 }
