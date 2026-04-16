@@ -46,21 +46,22 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           </Link>
         )}
         <Link
-          href="/liste"
-          aria-label="Listevisning"
-          title="Listevisning"
-          className={buttonVariants({ variant: "default", size: "icon" })}
-        >
-          <List className="size-5" />
-        </Link>
-        <Link
           href="/om"
           aria-label="Om appen"
           title="Om appen"
-          className={buttonVariants({ variant: "default", size: "icon" })}
+          className={buttonVariants({ variant: "secondary", size: "icon" })}
         >
           <Info className="size-5" />
         </Link>
+        <Link
+          href="/liste"
+          aria-label="Listevisning"
+          title="Listevisning"
+          className={buttonVariants({ variant: "secondary", size: "icon" })}
+        >
+          <List className="size-5" />
+        </Link>
+        
       </div>
     </header>
   );
