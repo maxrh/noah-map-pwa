@@ -51,6 +51,8 @@ function createMarkerElement(iconName?: string): HTMLElement {
   el.style.display = "flex";
   el.style.alignItems = "center";
   el.style.justifyContent = "center";
+  el.style.transition = "opacity 0.15s ease-out";
+  el.style.opacity = "1";
 
   const svg = iconName ? getIconSvg(iconName) : "";
   if (svg) {
@@ -109,6 +111,7 @@ export function Map() {
   const groupsRef = useRef<Group[]>([]);
   const markersOnScreen = useRef<Record<string, maplibregl.Marker>>({});
   const validSlugs = useRef<Set<string>>(new Set());
+  const rafId = useRef<number>(0);
   const [mapReady, setMapReady] = useState(false);
   const { query, setGroups, selectedCategory, registerFlyTo } = useSearch();
 
@@ -147,7 +150,7 @@ export function Map() {
   // Sync DOM markers for unclustered points visible on screen
   const updateMarkers = useCallback(() => {
     const map = mapRef.current;
-    if (!map || !map.isSourceLoaded(SOURCE_ID)) return;
+    if (!map) return;
 
     const features = map.querySourceFeatures(SOURCE_ID);
     const newMarkers: Record<string, maplibregl.Marker> = {};
@@ -226,6 +229,7 @@ export function Map() {
 
     const map = new maplibregl.Map({
       attributionControl: false,
+      fadeDuration: 0,
       container: mapContainerRef.current,
       style: {
         version: 8,
@@ -258,7 +262,7 @@ export function Map() {
         data: { type: "FeatureCollection", features: [] },
         cluster: true,
         clusterMaxZoom: 12,
-        clusterRadius: 50,
+        clusterRadius: 30,
       });
 
       // Cluster circle layer
@@ -285,6 +289,7 @@ export function Map() {
           "text-field": "{point_count_abbreviated}",
           "text-font": ["Noto Sans Medium"],
           "text-size": 14,
+          "text-allow-overlap": true,
         },
         paint: {
           "text-color": "#ffffff",
@@ -321,7 +326,10 @@ export function Map() {
           updateMarkers();
         }
       });
-      map.on("moveend", updateMarkers);
+      map.on("move", () => {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = requestAnimationFrame(updateMarkers);
+      });
 
       setMapReady(true);
 
