@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { MoveRight } from "lucide-react";
+import { icons } from "lucide-react";
 import { useSearch } from "@/lib/search-context";
 import { SearchBar } from "@/components/layout/search-bar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +22,16 @@ export default function ListePage() {
         g.category.toLowerCase().includes(q)
     );
   }, [groups, query]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, { icon: string; items: typeof filtered }>();
+    for (const g of filtered) {
+      const key = g.category || "Andet";
+      if (!map.has(key)) map.set(key, { icon: g.categoryIcon, items: [] });
+      map.get(key)!.items.push(g);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, "da"));
+  }, [filtered]);
 
   if (loading) {
     return (
@@ -43,24 +54,40 @@ export default function ListePage() {
   return (
     <div className="flex-1 overflow-y-auto">
       <SearchBar className="fixed bottom-4 left-0 right-0 z-50" />
-      <ul className="divide-y divide-border">
-        {filtered.map((group) => (
-          <li key={group.slug}>
-            <Link
-              href={`/gruppe/${group.slug}`}
-              className="flex items-center justify-between gap-4 px-6 py-5 hover:bg-muted/50 transition-colors"
-            >
-              <div className="min-w-0">
-                <p className="font-medium truncate">{group.name}</p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {group.address}
-                </p>
-              </div>
-              <MoveRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {grouped.map(([category, { icon, items }]) => {
+        const pascalName = icon
+          ? icon.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join("")
+          : null;
+        const Icon = pascalName && pascalName in icons
+          ? icons[pascalName as keyof typeof icons]
+          : null;
+        return (
+        <div key={category}>
+          <h2 className="sticky top-0 z-10 bg-secondary px-6 py-3 text-sm font-semibold text-secondary-foreground flex items-center gap-2">
+            {Icon && <Icon className="size-4" />}
+            {category}
+          </h2>
+          <ul className="divide-y divide-border">
+            {items.map((group) => (
+              <li key={group.slug}>
+                <Link
+                  href={`/gruppe/${group.slug}`}
+                  className="flex items-center justify-between gap-4 px-6 py-5 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{group.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {group.address}
+                    </p>
+                  </div>
+                  <MoveRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        );
+      })}
     </div>
   );
 }

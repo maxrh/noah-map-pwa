@@ -14,7 +14,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
   return (
     <header
       className={cn(
-        "flex items-center gap-4 px-4 h-16 shrink-0 z-40",
+        "flex items-center gap-4 px-4 h-19 shrink-0 z-40",
         transparent
           ? "bg-transparent"
           : "bg-background border-b"
@@ -27,12 +27,12 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           width={650}
           height={265}
           priority
-          className="h-12 w-auto -translate-y-px"
+          className="h-14 w-auto -translate-y-px"
         />
       </Link>
 
       <div
-        className={cn("flex items-center gap-1 shrink-0 ml-auto")}
+        className={cn("flex items-center gap-2 shrink-0 ml-auto")}
       >
         {isDetailPage && (
           <Link
@@ -41,7 +41,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
             title="Tilbage til kort"
             className={buttonVariants({ variant: "link" })}
           >
-            <MoveLeft className="h-5 w-5" />
+            <MoveLeft className="size-5" />
             Kort
           </Link>
         )}
@@ -51,7 +51,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           title="Listevisning"
           className={buttonVariants({ variant: "default", size: "icon" })}
         >
-          <List className="h-5 w-5" />
+          <List className="size-5" />
         </Link>
         <Link
           href="/om"
@@ -59,7 +59,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           title="Om appen"
           className={buttonVariants({ variant: "default", size: "icon" })}
         >
-          <Info className="h-5 w-5" />
+          <Info className="size-5" />
         </Link>
       </div>
     </header>

@@ -4,10 +4,15 @@ import { TypographyH1, TypographyP } from "@/components/ui/typography";
 function formatBuildTime(iso: string) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const date = `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${String(d.getUTCFullYear()).slice(2)}`;
-  const time = `${pad(d.getUTCHours())}.${pad(d.getUTCMinutes())}.${pad(d.getUTCSeconds())}`;
-  return `${date}, ${time}`;
+  return d.toLocaleString("da-DK", {
+    timeZone: "Europe/Copenhagen",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export default function OmPage() {
