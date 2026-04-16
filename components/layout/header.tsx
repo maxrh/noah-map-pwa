@@ -14,7 +14,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
   return (
     <header
       className={cn(
-        "flex items-center gap-4 px-4 h-14 shrink-0 z-40",
+        "flex items-center gap-4 px-4 h-16 shrink-0 z-40",
         transparent
           ? "bg-transparent"
           : "bg-background border-b"
@@ -27,7 +27,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           width={650}
           height={265}
           priority
-          className="h-11 w-auto -translate-y-px"
+          className="h-12 w-auto -translate-y-px"
         />
       </Link>
 

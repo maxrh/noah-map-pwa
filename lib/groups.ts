@@ -77,39 +77,52 @@ async function fetchCategories(): Promise<Category[]> {
   }));
 }
 
+// In-memory promise dedup — prevents concurrent fetches
+let pendingPromise: Promise<Group[]> | null = null;
+
 export async function fetchGroups(): Promise<Group[]> {
   const cached = getCached();
   if (cached) return cached.groups;
 
-  const [groupsRes, categories] = await Promise.all([
-    fetch(GROUPS_URL),
-    fetchCategories(),
-  ]);
+  if (pendingPromise) return pendingPromise;
 
-  if (!groupsRes.ok) throw new Error(`API error: ${groupsRes.status}`);
+  pendingPromise = (async () => {
+    try {
+      const [groupsRes, categories] = await Promise.all([
+        fetch(GROUPS_URL),
+        fetchCategories(),
+      ]);
 
-  const data = await groupsRes.json();
-  const [, ...rows] = data.values as string[][];
+      if (!groupsRes.ok) throw new Error(`API error: ${groupsRes.status}`);
 
-  const iconMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.icon]));
+      const data = await groupsRes.json();
+      const [, ...rows] = data.values as string[][];
 
-  const groups = rows.map((row) => {
-    const { lat, lng } = parseLocation(row[6] ?? "");
-    const category = row[4] ?? "";
-    return {
-      slug: toSlug(row[0] ?? ""),
-      name: row[0] ?? "",
-      description: row[1] ?? "",
-      address: row[2] ?? "",
-      image: row[3] ?? "",
-      category,
-      categoryIcon: iconMap.get(category.toLowerCase()) ?? "",
-      link: row[5] ?? "",
-      lat,
-      lng,
-    };
-  });
+      const iconMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.icon]));
 
-  setCache(groups, categories);
-  return groups;
+      const groups = rows.map((row) => {
+        const { lat, lng } = parseLocation(row[6] ?? "");
+        const category = row[4] ?? "";
+        return {
+          slug: toSlug(row[0] ?? ""),
+          name: row[0] ?? "",
+          description: row[1] ?? "",
+          address: row[2] ?? "",
+          image: row[3] ?? "",
+          category,
+          categoryIcon: iconMap.get(category.toLowerCase()) ?? "",
+          link: row[5] ?? "",
+          lat,
+          lng,
+        };
+      });
+
+      setCache(groups, categories);
+      return groups;
+    } finally {
+      pendingPromise = null;
+    }
+  })();
+
+  return pendingPromise;
 }
