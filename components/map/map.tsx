@@ -112,6 +112,7 @@ export function Map() {
   const markersOnScreen = useRef<Record<string, maplibregl.Marker>>({});
   const validSlugs = useRef<Set<string>>(new Set());
   const rafId = useRef<number>(0);
+  const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const { query, groups, selectedCategory, registerFlyTo } = useSearch();
 
@@ -253,6 +254,14 @@ export function Map() {
 
     mapRef.current = map;
 
+    const geolocate = new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showUserLocation: true,
+    });
+    geolocateRef.current = geolocate;
+    map.addControl(geolocate);
+
     map.on("load", () => {
       map.resize();
 
@@ -378,7 +387,7 @@ export function Map() {
       />
       {mapReady && (
         <div className="fixed top-18 right-4 z-50">
-          <MapControls map={mapRef.current} />
+          <MapControls map={mapRef.current} geolocate={geolocateRef.current} />
         </div>
       )}
     </>
