@@ -2,9 +2,9 @@
 
 export const runtime = "edge";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { fetchGroups, type Group } from "@/lib/groups";
+import { useSearch } from "@/lib/search-context";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -50,23 +50,9 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
 
 export default function GroupDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [group, setGroup] = useState<Group | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-
-  useEffect(() => {
-    fetchGroups()
-      .then((groups) => {
-        const found = groups.find((g) => g.slug === slug);
-        if (found) {
-          setGroup(found);
-        } else {
-          setNotFound(true);
-        }
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [slug]);
+  const { groups, loading } = useSearch();
+  const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
+  const notFound = !loading && !group;
 
   if (loading)
     return (

@@ -1,27 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { fetchGroups, type Group } from "@/lib/groups";
 import { MoveRight } from "lucide-react";
 import { useSearch } from "@/lib/search-context";
 import { SearchBar } from "@/components/layout/search-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ListePage() {
-  const [groups, setLocalGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { query, setGroups: setContextGroups } = useSearch();
-
-  useEffect(() => {
-    fetchGroups()
-      .then((g) => {
-        setLocalGroups(g);
-        setContextGroups(g);
-      })
-      .catch((err) => console.error("Failed to fetch groups:", err))
-      .finally(() => setLoading(false));
-  }, [setContextGroups]);
+  const { query, groups, loading } = useSearch();
 
   const filtered = useMemo(() => {
     if (!query.trim()) return groups;

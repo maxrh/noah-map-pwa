@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { layers, namedFlavor } from "@protomaps/basemaps";
 import { icons as lucideIcons } from "lucide";
-import { fetchGroups, type Group } from "@/lib/groups";
+import type { Group } from "@/lib/groups";
 import { useSearch } from "@/lib/search-context";
 import { MapControls } from "./map-controls";
 
@@ -113,7 +113,7 @@ export function Map() {
   const validSlugs = useRef<Set<string>>(new Set());
   const rafId = useRef<number>(0);
   const [mapReady, setMapReady] = useState(false);
-  const { query, setGroups, selectedCategory, registerFlyTo } = useSearch();
+  const { query, groups, selectedCategory, registerFlyTo } = useSearch();
 
   // Build filtered GeoJSON and update source
   const updateSource = useCallback(() => {
@@ -333,16 +333,7 @@ export function Map() {
 
       setMapReady(true);
 
-      // Fetch and populate
-      fetchGroups()
-        .then((groups) => {
-          groupsRef.current = groups;
-          validSlugs.current = new Set(groups.map((g) => g.slug));
-          setGroups(groups);
-          const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
-          source.setData(groupsToGeoJSON(groups));
-        })
-        .catch((err) => console.error("Failed to fetch groups:", err));
+      // Initial data will be populated by the groups effect below
     });
 
     // Resize map when container dimensions change
@@ -367,6 +358,15 @@ export function Map() {
   useEffect(() => {
     updateSource();
   }, [updateSource]);
+
+  // Sync groups from context into map
+  useEffect(() => {
+    if (!mapReady || !groups.length) return;
+    groupsRef.current = groups;
+    validSlugs.current = new Set(groups.map((g) => g.slug));
+    updateSource();
+    updateMarkers();
+  }, [groups, mapReady, updateSource, updateMarkers]);
 
   return (
     <>
