@@ -398,7 +398,7 @@ export function Map() {
     <div
       ref={mapContainerRef}
       className={cn(
-        "flex-1 w-full transition-opacity duration-500 ease-out",
+        "flex-1 w-full overflow-hidden transition-opacity duration-500 ease-out",
         mapReady ? "opacity-100" : "opacity-0"
       )}
       role="application"
