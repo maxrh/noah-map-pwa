@@ -255,13 +255,7 @@ export function Map() {
 
     mapRef.current = map;
 
-    // Native zoom controls (top-right)
-    map.addControl(
-      new maplibregl.NavigationControl({ showCompass: false }),
-      "top-right"
-    );
-
-    // Native geolocate control (top-right, same group)
+    // Native geolocate control (top-right)
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
       trackUserLocation: true,
