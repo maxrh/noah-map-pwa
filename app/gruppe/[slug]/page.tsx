@@ -3,6 +3,7 @@
 export const runtime = "edge";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useSearch } from "@/lib/search-context";
 import { PageWrapper } from "@/components/layout/page-wrapper";
@@ -37,12 +38,15 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
           <span className="text-muted-foreground text-sm">Indlæser...</span>
         </Skeleton>
       )}
-      <img
+      <Image
         src={src}
         alt={alt}
+        fill
+        sizes="(min-width: 768px) 50vw, 100vw"
+        unoptimized
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
-        className={`absolute inset-0 w-full h-full object-cover object-top md:object-contain md:object-top transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`object-cover object-top md:object-contain md:object-top transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
     </>
   );
