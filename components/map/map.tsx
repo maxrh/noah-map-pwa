@@ -308,6 +308,7 @@ export function Map() {
           "text-font": ["Noto Sans Medium"],
           "text-size": 14,
           "text-allow-overlap": true,
+          "text-ignore-placement": true,
         },
         paint: {
           "text-color": "#ffffff",
