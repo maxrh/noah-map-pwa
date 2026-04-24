@@ -5,11 +5,13 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Info, List, MoveLeft } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useSearch } from "@/lib/search-context";
 import { cn } from "@/lib/utils";
 
 export function Header({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { resetView } = useSearch();
   const isSubPage = pathname !== "/";
 
   function handleBack() {
@@ -34,11 +36,11 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
         href="/"
         className="flex items-center gap-2 shrink-0 rounded-sm focus-ring"
         onClick={(e) => {
-          // When already on the map page, force a hard reload so all filters,
-          // search, map view etc. reset to defaults.
+          // When already on the map page, soft-reset filters + map view
+          // instead of doing a hard reload — preserves PWA app-shell feel.
           if (pathname === "/") {
             e.preventDefault();
-            window.location.assign("/");
+            resetView();
           }
         }}
       >
@@ -52,7 +54,8 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
         />
       </Link>
 
-      <div
+      <nav
+        aria-label="Hovednavigation"
         className={cn("flex items-center gap-2 shrink-0 ml-auto", transparent && "[&>*]:shadow-md")}
       >
         {isSubPage && (
@@ -83,8 +86,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
         >
           <List className="size-5" />
         </Link>
-        
-      </div>
+      </nav>
     </header>
   );
 }

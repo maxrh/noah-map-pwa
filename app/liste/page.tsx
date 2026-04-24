@@ -58,7 +58,12 @@ export default function ListePage() {
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        aria-busy="true"
+        aria-live="polite"
+        aria-label="Indlæser liste"
+      >
         <ul className="divide-y divide-border">
           {Array.from({ length: 8 }).map((_, i) => (
             <li key={i} className="flex items-center justify-between gap-4 px-6 py-5">

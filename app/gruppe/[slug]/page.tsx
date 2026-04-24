@@ -25,7 +25,11 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
 
   if (error) {
     return (
-      <div className="absolute inset-0 bg-muted flex items-center justify-center">
+      <div
+        role="img"
+        aria-label={`Billede af ${alt} kunne ikke indlæses`}
+        className="absolute inset-0 bg-muted flex items-center justify-center"
+      >
         <span className="text-muted-foreground text-sm">Billede ikke tilgængeligt offline</span>
       </div>
     );
@@ -58,7 +62,12 @@ export default function GroupDetailPage() {
 
   if (loading)
     return (
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
+      <div
+        className="flex flex-col md:flex-row flex-1 min-h-0"
+        aria-busy="true"
+        aria-live="polite"
+        aria-label="Indlæser gruppe"
+      >
         <div className="relative h-56 md:h-auto md:w-1/2 shrink-0">
           <Skeleton className="absolute inset-0 rounded-none" />
         </div>
@@ -97,7 +106,11 @@ export default function GroupDetailPage() {
         {group.image ? (
           <GroupImage src={group.image} alt={group.name} />
         ) : (
-          <div className="absolute inset-0 bg-muted flex items-center justify-center">
+          <div
+            role="img"
+            aria-label={`Intet billede af ${group.name}`}
+            className="absolute inset-0 bg-muted flex items-center justify-center"
+          >
             <span className="text-muted-foreground text-sm">Intet billede</span>
           </div>
         )}

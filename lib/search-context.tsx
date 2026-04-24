@@ -20,6 +20,8 @@ interface SearchContextValue {
   setSelectedCategory: (category: string | null) => void;
   flyTo: (slug: string) => void;
   registerFlyTo: (fn: ((slug: string) => void) | null) => void;
+  resetView: () => void;
+  registerResetView: (fn: (() => void) | null) => void;
 }
 
 const SearchContext = createContext<SearchContextValue>({
@@ -31,6 +33,8 @@ const SearchContext = createContext<SearchContextValue>({
   setSelectedCategory: () => {},
   flyTo: () => {},
   registerFlyTo: () => {},
+  resetView: () => {},
+  registerResetView: () => {},
 });
 
 export function SearchProvider({ children }: { children: ReactNode }) {
@@ -40,6 +44,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const flyToRef = useRef<((slug: string) => void) | null>(null);
   const pendingFlyToRef = useRef<string | null>(null);
+  const resetViewRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     fetchGroups()
@@ -89,9 +94,19 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const registerResetView = useCallback((fn: (() => void) | null) => {
+    resetViewRef.current = fn;
+  }, []);
+
+  const resetView = useCallback(() => {
+    setQuery("");
+    setSelectedCategory(null);
+    resetViewRef.current?.();
+  }, []);
+
   return (
     <SearchContext.Provider
-      value={{ query, setQuery, groups, loading, selectedCategory, setSelectedCategory, flyTo, registerFlyTo }}
+      value={{ query, setQuery, groups, loading, selectedCategory, setSelectedCategory, flyTo, registerFlyTo, resetView, registerResetView }}
     >
       {children}
     </SearchContext.Provider>

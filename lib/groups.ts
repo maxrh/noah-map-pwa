@@ -1,3 +1,5 @@
+import { toSlug } from "./slug";
+
 const GROUPS_URL = `/api/sheet?range=${encodeURIComponent("Grupper!A1:G100")}`;
 const CATEGORIES_URL = `/api/sheet?range=${encodeURIComponent("Kategorier!A1:B100")}`;
 
@@ -17,16 +19,6 @@ export interface Group {
   link: string;
   lat: number;
   lng: number;
-}
-
-function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[æ]/g, "ae")
-    .replace(/[ø]/g, "oe")
-    .replace(/[å]/g, "aa")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 }
 
 function parseLocation(location: string): { lat: number; lng: number } {

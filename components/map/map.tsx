@@ -38,11 +38,14 @@ function getIconSvg(iconName: string, size = 18, stroke = "white"): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${children}</svg>`;
 }
 
-function createMarkerElement(iconName?: string): HTMLElement {
+function createMarkerElement(iconName?: string, label?: string): HTMLElement {
   // Outer element is owned by MapLibre (it sets transform + opacity each frame).
   // Inner element holds visuals + opacity transition so MapLibre doesn't override.
   const el = document.createElement("div");
   el.className = "poi-marker";
+  el.setAttribute("role", "button");
+  el.setAttribute("tabindex", "0");
+  if (label) el.setAttribute("aria-label", label);
   el.style.width = "36px";
   el.style.height = "36px";
   el.style.cursor = "pointer";
@@ -65,6 +68,9 @@ function createMarkerElement(iconName?: string): HTMLElement {
 function createClusterElement(count: number): HTMLElement {
   const el = document.createElement("div");
   el.className = "cluster-marker";
+  el.setAttribute("role", "button");
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("aria-label", `Klynge med ${count} grupper. Aktivér for at zoome ind.`);
   el.style.width = "44px";
   el.style.height = "44px";
   el.style.cursor = "pointer";
@@ -94,11 +100,6 @@ function fadeOutAndRemove(marker: maplibregl.Marker) {
     inner.style.opacity = "0";
   }
   window.setTimeout(() => marker.remove(), 300);
-}
-
-/** Fade marker in. Synchronous reflow avoids races with later fade-out calls. */
-function fadeIn(_marker: maplibregl.Marker) {
-  // Markers appear instantly. We only animate the fade-out.
 }
 
 function escapeHtml(str: string): string {
@@ -154,7 +155,7 @@ export function Map() {
   const rafId = useRef<number>(0);
   const compassRef = useRef<CompassControl | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const { query, groups, selectedCategory, registerFlyTo } = useSearch();
+  const { query, groups, selectedCategory, registerFlyTo, registerResetView } = useSearch();
 
   // Build filtered GeoJSON and update source
   const updateSource = useCallback(() => {
@@ -211,11 +212,18 @@ export function Map() {
         let marker = markersOnScreen.current[id];
         if (!marker) {
           const el = createClusterElement(props.point_count as number);
-          el.addEventListener("click", () => {
+          const expand = () => {
             const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
             source.getClusterExpansionZoom(props.cluster_id as number).then((zoom) => {
               map.easeTo({ center: coords, zoom: zoom + 0.5 });
             });
+          };
+          el.addEventListener("click", expand);
+          el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              expand();
+            }
           });
           marker = new maplibregl.Marker({ element: el }).setLngLat(coords);
         }
@@ -223,7 +231,6 @@ export function Map() {
         newMarkers[id] = marker;
         if (!markersOnScreen.current[id]) {
           marker.addTo(map);
-          fadeIn(marker);
         }
         continue;
       }
@@ -236,20 +243,39 @@ export function Map() {
 
       let marker = markersOnScreen.current[id];
       if (!marker) {
-        const el = createMarkerElement(props.categoryIcon);
+        const label = `${props.name as string}, ${props.category as string}`;
+        const el = createMarkerElement(props.categoryIcon, label);
         const popup = new maplibregl.Popup({ offset: 20, closeButton: false })
           .setHTML(createPopupHTML(props as { name: string; address: string; category: string; categoryIcon?: string; slug: string }));
+
+        // Add dialog semantics + focus management when popup opens
+        popup.on("open", () => {
+          const popupEl = popup.getElement();
+          if (!popupEl) return;
+          popupEl.setAttribute("role", "dialog");
+          popupEl.setAttribute("aria-label", `${props.name as string} – detaljer`);
+          // Move focus to the first focusable element (the "Læs mere" link)
+          const firstLink = popupEl.querySelector<HTMLAnchorElement>("a.popup-cta");
+          firstLink?.focus();
+        });
 
         marker = new maplibregl.Marker({ element: el })
           .setLngLat(coords)
           .setPopup(popup);
+
+        // Keyboard activation: Enter/Space toggles popup
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            marker!.togglePopup();
+          }
+        });
       }
 
       newMarkers[id] = marker;
 
       if (!markersOnScreen.current[id]) {
         marker.addTo(map);
-        fadeIn(marker);
       }
     }
 
@@ -280,7 +306,8 @@ export function Map() {
       // Force marker sync so the marker exists
       updateMarkers();
       const marker = markersOnScreen.current[slug];
-      if (marker && !marker.getPopup().isOpen()) {
+      const popup = marker?.getPopup();
+      if (marker && popup && !popup.isOpen()) {
         marker.togglePopup();
       }
     });
@@ -419,6 +446,23 @@ export function Map() {
       registerFlyTo(null);
     };
   }, [registerFlyTo, handleFlyTo, mapReady, groups.length]);
+
+  // Expose a reset-view action used by the header logo click
+  useEffect(() => {
+    if (!mapReady) return;
+    const reset = () => {
+      const map = mapRef.current;
+      if (!map) return;
+      // Close any open popups
+      for (const id in markersOnScreen.current) {
+        const popup = markersOnScreen.current[id].getPopup();
+        if (popup?.isOpen()) popup.remove();
+      }
+      map.easeTo({ center: DENMARK_CENTER, zoom: INITIAL_ZOOM, bearing: 0, pitch: 0, duration: 800 });
+    };
+    registerResetView(reset);
+    return () => registerResetView(null);
+  }, [registerResetView, mapReady]);
 
   return (
     <div
