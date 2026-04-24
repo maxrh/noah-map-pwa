@@ -54,7 +54,7 @@ export function SearchBar({
   return (
     <div className={cn("px-4", className)}>
       <div className="relative">
-        <InputGroup className="shadow-lg h-12">
+        <InputGroup className="shadow-lg h-12 focus-within:ring-3 focus-within:ring-ring/50">
           <InputGroupInput
             placeholder="Søg..."
             value={query}
@@ -78,7 +78,7 @@ export function SearchBar({
                 aria-label="Ryd søgning"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setQuery("")}
-                className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+                className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-ring"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -97,7 +97,7 @@ export function SearchBar({
               <li key={g.slug}>
                 <button
                   type="button"
-                  className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2.5 hover:bg-muted focus-visible:bg-muted transition-colors cursor-pointer outline-none"
                   onMouseDown={() => {
                     if (blurTimeout.current) clearTimeout(blurTimeout.current);
                   }}

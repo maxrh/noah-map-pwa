@@ -75,7 +75,7 @@ export default function ListePage() {
               <li key={group.slug}>
                 <Link
                   href={`/gruppe/${group.slug}`}
-                  className="flex items-center justify-between gap-4 px-6 py-5 hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between gap-4 px-6 py-5 hover:bg-muted/50 focus-visible:bg-muted/50 transition-colors focus-ring-inset"
                 >
                   <div className="min-w-0">
                     <p className="font-medium truncate">{group.name}</p>

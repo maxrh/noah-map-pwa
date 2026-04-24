@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 import { useSearch } from "@/lib/search-context";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   TypographyH1,
   TypographyH3,
@@ -88,8 +88,8 @@ export default function GroupDetailPage() {
     return (
       <PageWrapper>
         <TypographyH3 className="mb-4">Gruppe ikke fundet</TypographyH3>
-        <Link href="/">
-          <Button variant="outline">Tilbage til kort</Button>
+        <Link href="/" className={buttonVariants({ variant: "outline" })}>
+          Tilbage til kort
         </Link>
       </PageWrapper>
     );
@@ -125,12 +125,20 @@ export default function GroupDetailPage() {
           </TypographyP>
 
           <div className="flex flex-wrap gap-1 mt-6">
-            <Link href={`/?flyTo=${group.slug}`}>
-              <Button size="lg" variant="secondary"><MapPin /> Vis på kort</Button>
+            <Link
+              href={`/?flyTo=${group.slug}`}
+              className={buttonVariants({ variant: "secondary", size: "lg" })}
+            >
+              <MapPin /> Vis på kort
             </Link>
             {group.link && (
-              <Link href={group.link} target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="secondary">Besøg hjemmeside <MoveRight /></Button>
+              <Link
+                href={group.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
+              >
+                Besøg hjemmeside <MoveRight />
               </Link>
             )}
           </div>

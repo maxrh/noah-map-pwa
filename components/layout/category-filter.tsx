@@ -101,7 +101,7 @@ export function CategoryFilter() {
       role="group"
       aria-label="Filtrer efter kategori"
       className={cn(
-        "flex gap-1 overflow-x-auto scrollbar-none px-4 select-none",
+        "flex gap-1 overflow-x-auto scrollbar-none px-4 py-2 select-none",
         isDragging
           ? "cursor-grabbing **:cursor-grabbing!"
           : "cursor-grab"
@@ -110,7 +110,7 @@ export function CategoryFilter() {
       <button
         type="button"
         onClick={() => setSelectedCategory(null)}
-        className="shrink-0"
+        className="shrink-0 rounded-4xl focus-ring"
       >
         <CategoryBadge
           category="Alle"
@@ -129,7 +129,7 @@ export function CategoryFilter() {
               selectedCategory === cat.name ? null : cat.name
             )
           }
-          className="shrink-0"
+          className="shrink-0 rounded-4xl focus-ring"
         >
           <CategoryBadge
             category={cat.name}
