@@ -39,6 +39,3 @@ next-env.d.ts
 # serwist (generated service worker)
 public/sw*
 public/swe-worker*
-
-# auto-generated route list (run prebuild to regenerate)
-app/routes.generated.ts
