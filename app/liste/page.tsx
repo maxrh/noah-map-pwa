@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { MoveRight } from "lucide-react";
 import { icons } from "lucide-react";
@@ -8,8 +8,31 @@ import { useSearch } from "@/lib/search-context";
 import { SearchBar } from "@/components/layout/search-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const SCROLL_KEY = "liste-scroll";
+
 export default function ListePage() {
   const { query, groups, loading } = useSearch();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Restore previous scroll position once data is ready, then clear it so
+  // a fresh navigation (e.g. from the header) starts at the top next time.
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved) {
+      el.scrollTop = parseInt(saved, 10) || 0;
+      sessionStorage.removeItem(SCROLL_KEY);
+    }
+  }, [loading]);
+
+  // Save scroll only when navigating into a detail page – so back returns here,
+  // but using the header nav to /liste again starts fresh at the top.
+  function saveScroll() {
+    const el = scrollRef.current;
+    if (el) sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) return groups;
@@ -52,7 +75,7 @@ export default function ListePage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto">
       <SearchBar
         showSuggestions={false}
         className="fixed bottom-4 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]"
@@ -75,6 +98,7 @@ export default function ListePage() {
               <li key={group.slug}>
                 <Link
                   href={`/gruppe/${group.slug}`}
+                  onClick={saveScroll}
                   className="flex items-center justify-between gap-4 px-6 py-5 hover:bg-muted/50 focus-visible:bg-muted/50 transition-colors focus-ring-inset"
                 >
                   <div className="min-w-0">
