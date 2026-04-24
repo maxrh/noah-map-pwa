@@ -51,29 +51,25 @@ export function StatusIndicator() {
     };
   }, []);
 
-  if (status === "idle") return null;
-
-  if (status === "offline") {
-    return (
-      <span
-        role="status"
-        aria-label="Offline"
-        title="Offline"
-        className="inline-flex items-center text-muted-foreground"
-      >
-        <WifiOff className="size-4" aria-hidden="true" />
-      </span>
-    );
-  }
+  const label =
+    status === "offline"
+      ? "Offline"
+      : status === "installing"
+        ? "Indlæser data"
+        : "";
 
   return (
     <span
       role="status"
-      aria-label="Forbereder offline-tilstand"
-      title="Forbereder offline-tilstand"
+      aria-live="polite"
+      aria-label={label || undefined}
+      title={label || undefined}
       className="inline-flex items-center text-muted-foreground"
     >
-      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      {status === "offline" && <WifiOff className="size-4" aria-hidden="true" />}
+      {status === "installing" && (
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      )}
     </span>
   );
 }
