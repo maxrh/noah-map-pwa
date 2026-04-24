@@ -47,7 +47,7 @@ function createMarkerElement(iconName?: string): HTMLElement {
   el.style.height = "36px";
   el.style.borderRadius = "50%";
   el.style.backgroundColor = "#00ae5a";
-  el.style.border = "2px solid white";
+  el.style.border = "2px solid #DBF1E0";
   el.style.cursor = "pointer";
   el.style.display = "flex";
   el.style.alignItems = "center";
@@ -102,7 +102,7 @@ function createPopupHTML(props: {
     <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 6px;border-radius:9999px;background:#f5f5f5;font-size:12px;font-weight:500;color:#555;margin-bottom:16px">${iconSvg}${escapeHtml(props.category)}</div>
     <h2 style="margin:0 0 4px;font-size:18px;font-weight:bold;line-height:1.3">${escapeHtml(props.name)}</h2>
     <p style="margin:0 0 16px;font-size:13px">${escapeHtml(props.address)}</p>
-    <a href="/gruppe/${encodeURIComponent(props.slug)}" style="display:inline-flex;align-items:center;justify-content:center;width:100%;height:32px;padding:0 10px;font-size:13px;font-weight:500;background:#f5f5f5;color:#1a1a1a;text-decoration:none;transition:background 0.15s;border:none;outline:none" onmouseover="this.style.background='#ebebeb'" onmouseout="this.style.background='#f5f5f5'">Læs mere</a>
+    <a href="/gruppe/${encodeURIComponent(props.slug)}" class="popup-cta">Læs mere</a>
   </div>`;
 }
 
@@ -293,7 +293,7 @@ export function Map() {
           "circle-color": "#168c49",
           "circle-radius": ["step", ["get", "point_count"], 18, 5, 22, 10, 28],
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
+          "circle-stroke-color": "#DBF1E0",
         },
       });
 

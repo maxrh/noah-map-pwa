@@ -5,12 +5,12 @@ export interface PageContent {
   title: string;
   subtitle: string;
   content: string;
-  link1: string;
-  link2: string;
+  buttonText: string;
+  buttonUrl: string;
 }
 
 const STORAGE_KEY = "noah-pages";
-const SCHEMA_VERSION = 1; // bump when PageContent shape changes
+const SCHEMA_VERSION = 2; // bump when PageContent shape changes
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 interface CachedData {
@@ -56,8 +56,8 @@ async function fetchFromNetwork(): Promise<PageContent[]> {
       title: row[1] ?? "",
       subtitle: row[2] ?? "",
       content: row[3] ?? "",
-      link1: row[4] ?? "",
-      link2: row[5] ?? "",
+      buttonText: row[4] ?? "",
+      buttonUrl: row[5] ?? "",
     }));
 
   setCache(pages);

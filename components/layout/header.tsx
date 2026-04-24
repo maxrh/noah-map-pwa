@@ -32,7 +32,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
     >
       <Link
         href="/"
-        className="flex items-center gap-2 shrink-0"
+        className="flex items-center gap-2 shrink-0 rounded-sm focus-ring"
         onClick={(e) => {
           // When already on the map page, force a hard reload so all filters,
           // search, map view etc. reset to defaults.

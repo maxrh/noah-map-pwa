@@ -53,6 +53,21 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+  /* Reusable focus ring – matches Button's focus-visible style.
+     Use on non-Button elements (Links, native buttons, anchors). */
+  .focus-ring {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+  .focus-ring:focus-visible {
+    outline: 3px solid color-mix(in oklch, var(--ring) 50%, transparent);
+    outline-offset: 1px;
+  }
+  /* Inset variant – ring sits inside the element (for full-width rows etc.) */
+  .focus-ring-inset:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
+  }
 }
 
 @layer base {
@@ -78,7 +93,7 @@
     --destructive: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --ring: oklch(0.937 0.032 152); /* #DBF1E0 */
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -146,6 +161,8 @@
 
 .maplibregl-ctrl-group button:focus-visible {
   background-color: var(--accent) !important;
+  outline: 3px solid var(--ring) !important;
+  outline-offset: 1px !important;
 }
 
 .maplibregl-ctrl-group button:active {
@@ -176,4 +193,46 @@
 
 .maplibregl-ctrl-top-right .maplibregl-ctrl {
   margin: 0 0 0 !important;
+}
+
+/* POI marker focus ring (MapLibre adds .maplibregl-marker to the same element) */
+.poi-marker:focus {
+  outline: none;
+}
+.poi-marker:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* Map canvas – replace default black outline with brand ring */
+.maplibregl-canvas:focus {
+  outline: none !important;
+}
+.maplibregl-canvas:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--ring) 50%, transparent) !important;
+  outline-offset: -3px !important;
+}
+
+/* Popup "Læs mere" CTA */
+.popup-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  text-decoration: none;
+  transition: background 0.15s, box-shadow 0.15s;
+  border: none;
+  outline: none;
+}
+.popup-cta:hover {
+  background: var(--muted);
+}
+.popup-cta:focus-visible {
+  box-shadow: 0 0 0 3px var(--ring);
 }

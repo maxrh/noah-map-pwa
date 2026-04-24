@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { MoveRight } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TypographyH1, TypographyP } from "@/components/ui/typography";
@@ -68,7 +70,7 @@ export default function OmPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-12">
+    <div className="flex-1 overflow-y-auto p-6 pb-16 md:p-12 md:pb-24">
       <div className="max-w-xl mx-auto">
         {loading ? (
           <>
@@ -80,7 +82,7 @@ export default function OmPage() {
           <>
             <TypographyH1 className="mb-3">{page?.title ?? "Om appen"}</TypographyH1>
             {page?.subtitle && (
-              <TypographyP className="whitespace-pre-line">
+              <TypographyP className="whitespace-pre-line text-lg font-medium">
                 {page.subtitle}
               </TypographyP>
             )}
@@ -89,10 +91,22 @@ export default function OmPage() {
                 {page.content}
               </TypographyP>
             )}
+            {page?.buttonText && page?.buttonUrl && (
+              <div className="mt-6">
+                <Link
+                  href={page.buttonUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({ variant: "secondary", size: "lg" })}
+                >
+                  {page.buttonText} <MoveRight />
+                </Link>
+              </div>
+            )}
           </>
         )}
 
-      <div className="my-16" />
+      <div className="my-24" />
 
       <dl className="space-y-4 text-sm">
         <div className="flex justify-between">
@@ -112,7 +126,7 @@ export default function OmPage() {
               href="https://monsun.dk"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
+              className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
             >
               Monsun
             </a>
@@ -126,7 +140,7 @@ export default function OmPage() {
               href="https://protomaps.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
+              className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
             >
               Protomaps
             </a>
@@ -135,7 +149,7 @@ export default function OmPage() {
               href="https://openstreetmap.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
+              className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
             >
               OpenStreetMap
             </a>
