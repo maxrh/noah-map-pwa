@@ -29,7 +29,7 @@ export default function Home() {
         <CategoryFilter />
         <SearchBar />
       </div>
-      <Suspense>
+      <Suspense fallback={null}>
         <FlyToHandler />
       </Suspense>
     </>

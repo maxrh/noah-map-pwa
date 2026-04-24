@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo, type ChangeEvent } from "react";
+import { useRef, useState, useMemo, useId, useEffect, type ChangeEvent, type KeyboardEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import {
@@ -23,7 +23,14 @@ export function SearchBar({
   const router = useRouter();
   const { query, setQuery, groups, flyTo } = useSearch();
   const [focused, setFocused] = useState(false);
-  const blurTimeout = useRef<ReturnType<typeof setTimeout>>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listboxId = useId();
+
+  // Clear pending blur timer on unmount
+  useEffect(() => () => {
+    if (blurTimeout.current) clearTimeout(blurTimeout.current);
+  }, []);
 
   const suggestions = useMemo(() => {
     if (!showSuggestionsProp || !query.trim()) return [];
@@ -40,6 +47,11 @@ export function SearchBar({
 
   const showSuggestions = focused && suggestions.length > 0;
 
+  // Reset highlight whenever the suggestion list changes
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [suggestions]);
+
   function handleSelect(slug: string) {
     setQuery("");
     setFocused(false);
@@ -49,6 +61,22 @@ export function SearchBar({
     // The search context queues fly-to calls if the map isn't mounted yet,
     // so we can call this unconditionally without a setTimeout race.
     flyTo(slug);
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!showSuggestions) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+    } else if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      handleSelect(suggestions[activeIndex].slug);
+    } else if (e.key === "Escape") {
+      setFocused(false);
+    }
   }
 
   return (
@@ -69,6 +97,16 @@ export function SearchBar({
             onBlur={() => {
               blurTimeout.current = setTimeout(() => setFocused(false), 150);
             }}
+            onKeyDown={handleKeyDown}
+            role="combobox"
+            aria-expanded={showSuggestions}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              showSuggestions && activeIndex >= 0
+                ? `${listboxId}-opt-${activeIndex}`
+                : undefined
+            }
             type="search"
             name="noah-search"
             autoComplete="off"
@@ -96,17 +134,26 @@ export function SearchBar({
 
         {showSuggestions && (
           <ul
+            id={listboxId}
+            role="listbox"
             aria-label="Søgeforslag"
             className="absolute z-50 bottom-full left-0 right-0 mb-1 bg-popover shadow-lg overflow-hidden"
           >
-            {suggestions.map((g) => (
-              <li key={g.slug}>
+            {suggestions.map((g, i) => (
+              <li key={g.slug} role="presentation">
                 <button
+                  id={`${listboxId}-opt-${i}`}
                   type="button"
-                  className="w-full text-left px-3 py-2.5 hover:bg-muted focus-visible:bg-muted transition-colors cursor-pointer outline-none"
+                  role="option"
+                  aria-selected={i === activeIndex}
+                  className={cn(
+                    "w-full text-left px-3 py-2.5 transition-colors cursor-pointer outline-none",
+                    i === activeIndex ? "bg-muted" : "hover:bg-muted focus-visible:bg-muted"
+                  )}
                   onMouseDown={() => {
                     if (blurTimeout.current) clearTimeout(blurTimeout.current);
                   }}
+                  onMouseEnter={() => setActiveIndex(i)}
                   onClick={() => handleSelect(g.slug)}
                 >
                   <div className="flex items-center gap-2 min-w-0">

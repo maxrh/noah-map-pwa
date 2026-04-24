@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { findGroupRowBySlug } from "@/lib/sheets-server";
 
 export const runtime = "edge";
 
@@ -9,43 +10,15 @@ interface GroupMeta {
   image: string;
 }
 
-function toSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[æ]/g, "ae")
-    .replace(/[ø]/g, "oe")
-    .replace(/[å]/g, "aa")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
 async function fetchGroup(slug: string): Promise<GroupMeta | null> {
-  const sheetId = process.env.SHEET_ID;
-  const apiKey = process.env.SHEETS_API_KEY;
-  if (!sheetId || !apiKey) return null;
-
-  const range = encodeURIComponent("Grupper!A1:G100");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-  try {
-    const res = await fetch(url, { next: { revalidate: 1800 } });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { values?: string[][] };
-    const rows = (data.values ?? []).slice(1);
-    for (const row of rows) {
-      const name = row[0] ?? "";
-      if (toSlug(name) === slug) {
-        return {
-          slug,
-          name,
-          description: row[1] ?? "",
-          image: row[3] ?? "",
-        };
-      }
-    }
-  } catch {
-    // Network/auth error – fall back to slug-derived metadata
-  }
-  return null;
+  const row = await findGroupRowBySlug(slug);
+  if (!row) return null;
+  return {
+    slug,
+    name: row[0] ?? "",
+    description: row[1] ?? "",
+    image: row[3] ?? "",
+  };
 }
 
 export async function generateMetadata({

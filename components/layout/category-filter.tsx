@@ -114,6 +114,7 @@ export function CategoryFilter() {
       <button
         type="button"
         onClick={() => setSelectedCategory(null)}
+        aria-pressed={selectedCategory === null}
         className="shrink-0 rounded-4xl focus-ring"
       >
         <CategoryBadge
@@ -133,6 +134,7 @@ export function CategoryFilter() {
               selectedCategory === cat.name ? null : cat.name
             )
           }
+          aria-pressed={selectedCategory === cat.name}
           className="shrink-0 rounded-4xl focus-ring"
         >
           <CategoryBadge
