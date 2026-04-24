@@ -24,13 +24,24 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
   return (
     <header
       className={cn(
-        "flex items-center gap-4 px-4 h-19 shrink-0 z-40",
+        "flex items-center gap-4 px-4 h-19 shrink-0 z-40 border-b",
         transparent
-          ? "bg-transparent"
-          : "bg-background border-b"
+          ? "bg-transparent border-transparent"
+          : "bg-background"
       )}
     >
-      <Link href="/" className="flex items-center gap-2 shrink-0">
+      <Link
+        href="/"
+        className="flex items-center gap-2 shrink-0"
+        onClick={(e) => {
+          // When already on the map page, force a hard reload so all filters,
+          // search, map view etc. reset to defaults.
+          if (pathname === "/") {
+            e.preventDefault();
+            window.location.assign("/");
+          }
+        }}
+      >
         <Image
           src="/Logo_NOAH_2020_small.png"
           alt="NOAH logo"

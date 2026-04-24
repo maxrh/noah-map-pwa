@@ -42,7 +42,7 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
         alt={alt}
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 w-full h-full object-cover object-top md:object-contain md:object-top transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
     </>
   );
@@ -93,7 +93,7 @@ export default function GroupDetailPage() {
   return (
     <div className="flex flex-col md:flex-row flex-1 min-h-0">
       {/* Left side – fixed image */}
-      <div className="relative h-56 md:h-auto md:w-1/2 md:sticky md:top-0 shrink-0">
+      <div className="relative h-56 md:h-auto md:w-1/2 md:sticky md:top-0 shrink-0 md:bg-secondary">
         {group.image ? (
           <GroupImage src={group.image} alt={group.name} />
         ) : (
@@ -104,7 +104,7 @@ export default function GroupDetailPage() {
       </div>
 
       {/* Right side – scrollable content */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-12 animate-in fade-in duration-300">
+      <div className="flex-1 overflow-y-auto p-6 pb-16 md:p-12 md:pb-24 animate-in fade-in duration-300">
         <div className="max-w-xl mx-auto">
           <CategoryBadge
             category={group.category}

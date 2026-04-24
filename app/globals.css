@@ -137,6 +137,19 @@
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
+  transition: all 0.15s ease;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background-color: var(--accent) !important;
+}
+
+.maplibregl-ctrl-group button:focus-visible {
+  background-color: var(--accent) !important;
+}
+
+.maplibregl-ctrl-group button:active {
+  transform: translateY(1px);
 }
 
 .maplibregl-ctrl-group button + button {
@@ -148,6 +161,8 @@
   align-items: center;
   justify-content: center;
   background-image: none !important;
+  transform: none !important;
+  animation: none !important;
 }
 
 /* Push top-right controls below the transparent header */
