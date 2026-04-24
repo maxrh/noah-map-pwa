@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "generate-routes": "node scripts/generate-routes.mjs",
+    "prebuild": "node scripts/generate-routes.mjs",
     "build": "next build",
     "lint": "next lint",
     "pages:build": "npx @cloudflare/next-on-pages",
