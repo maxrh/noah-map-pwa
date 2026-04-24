@@ -36,7 +36,6 @@ function parseLocation(location: string): { lat: number; lng: number } {
 
 const STORAGE_KEY = "noah-groups";
 const SCHEMA_VERSION = 1; // bump when Group/Category shape changes
-const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 interface CachedData {
   v: number;
@@ -51,7 +50,6 @@ function getCached(): { groups: Group[]; categories: Category[] } | null {
     if (!raw) return null;
     const cached: CachedData = JSON.parse(raw);
     if (cached.v !== SCHEMA_VERSION) return null;
-    if (Date.now() - cached.timestamp > CACHE_TTL) return null;
     return { groups: cached.groups, categories: cached.categories };
   } catch {
     return null;
@@ -121,6 +119,8 @@ async function fetchFromNetwork(): Promise<Group[]> {
 }
 
 export async function fetchGroups(options: { force?: boolean } = {}): Promise<Group[]> {
+  // Cache-first: instant render, even when offline. Background refresh happens
+  // via the search context's online/visibility listeners (force: true).
   if (!options.force) {
     const cached = getCached();
     if (cached) return cached.groups;
@@ -131,6 +131,12 @@ export async function fetchGroups(options: { force?: boolean } = {}): Promise<Gr
   pendingPromise = (async () => {
     try {
       return await fetchFromNetwork();
+    } catch (err) {
+      // Network failed (offline / API down). Fall back to any stale cache
+      // we have so the app keeps working.
+      const cached = getCached();
+      if (cached) return cached.groups;
+      throw err;
     } finally {
       pendingPromise = null;
     }

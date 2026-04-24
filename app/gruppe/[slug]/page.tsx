@@ -26,7 +26,7 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
   if (error) {
     return (
       <div className="absolute inset-0 bg-muted flex items-center justify-center">
-        <span className="text-muted-foreground text-sm">Billede kunne ikke indlæses</span>
+        <span className="text-muted-foreground text-sm">Billede ikke tilgængeligt offline</span>
       </div>
     );
   }
@@ -34,9 +34,7 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
   return (
     <>
       {!loaded && (
-        <Skeleton className="absolute inset-0 rounded-none flex items-center justify-center">
-          <span className="text-muted-foreground text-sm">Indlæser...</span>
-        </Skeleton>
+        <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <Image
         src={src}
@@ -62,9 +60,7 @@ export default function GroupDetailPage() {
     return (
       <div className="flex flex-col md:flex-row flex-1 min-h-0">
         <div className="relative h-56 md:h-auto md:w-1/2 shrink-0">
-          <Skeleton className="absolute inset-0 rounded-none flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">Indlæser...</span>
-          </Skeleton>
+          <Skeleton className="absolute inset-0 rounded-none" />
         </div>
         <div className="flex-1 p-6 md:p-12">
           <div className="max-w-xl mx-auto">
