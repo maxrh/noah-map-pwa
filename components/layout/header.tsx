@@ -2,14 +2,24 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Info, List, MoveLeft } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Header({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
-  const isDetailPage = pathname.startsWith("/gruppe/");
+  const router = useRouter();
+  const isSubPage = pathname !== "/";
+
+  function handleBack() {
+    // Fall back to home when there's no in-app history (deep link / PWA launch)
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  }
 
   return (
     <header
@@ -34,16 +44,16 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
       <div
         className={cn("flex items-center gap-2 shrink-0 ml-auto")}
       >
-        {isDetailPage && (
-          <Link
-            href="/"
-            aria-label="Tilbage til kort"
-            title="Tilbage til kort"
-            className={buttonVariants({ variant: "link" })}
+        {isSubPage && (
+          <Button
+            variant="default"
+            size="icon"
+            aria-label="Tilbage"
+            title="Tilbage"
+            onClick={handleBack}
           >
             <MoveLeft className="size-5" />
-            Kort
-          </Link>
+          </Button>
         )}
         <Link
           href="/om"

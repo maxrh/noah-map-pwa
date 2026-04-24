@@ -12,10 +12,12 @@ function kebabToPascal(str: string): string {
 export function CategoryBadge({
   category,
   iconName,
+  size = "default",
   className,
 }: {
   category: string;
   iconName?: string;
+  size?: "default" | "xs";
   className?: string;
 }) {
   const pascalName = iconName ? kebabToPascal(iconName) : null;
@@ -24,8 +26,13 @@ export function CategoryBadge({
       ? icons[pascalName as keyof typeof icons]
       : null;
 
+  const sizeClasses =
+    size === "xs"
+      ? "h-5 px-2 py-0 text-xs gap-1 has-data-[icon=inline-start]:pl-1.5 has-data-[icon=inline-end]:pr-1.5 [&>svg]:size-3!"
+      : "";
+
   return (
-    <Badge variant="secondary" className={cn(className)}>
+    <Badge variant="secondary" className={cn(sizeClasses, className)}>
       {Icon && <Icon data-icon="inline-start" />}
       {category}
     </Badge>

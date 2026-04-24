@@ -19,7 +19,7 @@ interface SearchContextValue {
   selectedCategory: string | null;
   setSelectedCategory: (category: string | null) => void;
   flyTo: (slug: string) => void;
-  registerFlyTo: (fn: (slug: string) => void) => void;
+  registerFlyTo: (fn: ((slug: string) => void) | null) => void;
 }
 
 const SearchContext = createContext<SearchContextValue>({
@@ -38,7 +38,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const flyToRef = useRef<(slug: string) => void>(() => {});
+  const flyToRef = useRef<((slug: string) => void) | null>(null);
+  const pendingFlyToRef = useRef<string | null>(null);
 
   useEffect(() => {
     fetchGroups()
@@ -47,12 +48,45 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const registerFlyTo = useCallback((fn: (slug: string) => void) => {
+  // Background refresh when the device comes back online or tab regains focus.
+  // Bypasses the localStorage cache to pull fresh data from the edge proxy.
+  useEffect(() => {
+    function refresh() {
+      fetchGroups({ force: true })
+        .then(setGroups)
+        .catch((err) => console.error("Background refresh failed:", err));
+    }
+
+    function onVisibility() {
+      if (document.visibilityState === "visible") refresh();
+    }
+
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  const registerFlyTo = useCallback((fn: ((slug: string) => void) | null) => {
     flyToRef.current = fn;
+    // Drain any pending fly-to that arrived before the map was ready
+    if (fn && pendingFlyToRef.current) {
+      const slug = pendingFlyToRef.current;
+      pendingFlyToRef.current = null;
+      fn(slug);
+    }
   }, []);
 
   const flyTo = useCallback((slug: string) => {
-    flyToRef.current(slug);
+    if (flyToRef.current) {
+      flyToRef.current(slug);
+    } else {
+      // Map not ready yet — queue it
+      pendingFlyToRef.current = slug;
+    }
   }, []);
 
   return (

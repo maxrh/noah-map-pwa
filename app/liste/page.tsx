@@ -53,7 +53,10 @@ export default function ListePage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <SearchBar className="fixed bottom-4 left-0 right-0 z-50" />
+      <SearchBar
+        showSuggestions={false}
+        className="fixed bottom-4 left-0 right-0 z-50"
+      />
       {grouped.map(([category, { icon, items }]) => {
         const pascalName = icon
           ? icon.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join("")
@@ -88,6 +91,7 @@ export default function ListePage() {
         </div>
         );
       })}
+      <div aria-hidden className="h-24" />
     </div>
   );
 }

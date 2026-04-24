@@ -1,7 +1,5 @@
-const SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID;
-const API_KEY = process.env.NEXT_PUBLIC_SHEETS_API_KEY;
-const GROUPS_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Grupper!A1:G100?key=${API_KEY}`;
-const CATEGORIES_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Kategorier!A1:B100?key=${API_KEY}`;
+const GROUPS_URL = `/api/sheet?range=${encodeURIComponent("Grupper!A1:G100")}`;
+const CATEGORIES_URL = `/api/sheet?range=${encodeURIComponent("Kategorier!A1:B100")}`;
 
 export interface Category {
   name: string;
@@ -37,9 +35,11 @@ function parseLocation(location: string): { lat: number; lng: number } {
 }
 
 const STORAGE_KEY = "noah-groups";
+const SCHEMA_VERSION = 1; // bump when Group/Category shape changes
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 interface CachedData {
+  v: number;
   groups: Group[];
   categories: Category[];
   timestamp: number;
@@ -50,6 +50,7 @@ function getCached(): { groups: Group[]; categories: Category[] } | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const cached: CachedData = JSON.parse(raw);
+    if (cached.v !== SCHEMA_VERSION) return null;
     if (Date.now() - cached.timestamp > CACHE_TTL) return null;
     return { groups: cached.groups, categories: cached.categories };
   } catch {
@@ -59,7 +60,12 @@ function getCached(): { groups: Group[]; categories: Category[] } | null {
 
 function setCache(groups: Group[], categories: Category[]) {
   try {
-    const data: CachedData = { groups, categories, timestamp: Date.now() };
+    const data: CachedData = {
+      v: SCHEMA_VERSION,
+      groups,
+      categories,
+      timestamp: Date.now(),
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
     // localStorage full or unavailable — ignore
@@ -80,45 +86,51 @@ async function fetchCategories(): Promise<Category[]> {
 // In-memory promise dedup — prevents concurrent fetches
 let pendingPromise: Promise<Group[]> | null = null;
 
-export async function fetchGroups(): Promise<Group[]> {
-  const cached = getCached();
-  if (cached) return cached.groups;
+async function fetchFromNetwork(): Promise<Group[]> {
+  const [groupsRes, categories] = await Promise.all([
+    fetch(GROUPS_URL),
+    fetchCategories(),
+  ]);
+
+  if (!groupsRes.ok) throw new Error(`API error: ${groupsRes.status}`);
+
+  const data = await groupsRes.json();
+  const [, ...rows] = data.values as string[][];
+
+  const iconMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.icon]));
+
+  const groups = rows.map((row) => {
+    const { lat, lng } = parseLocation(row[6] ?? "");
+    const category = row[4] ?? "";
+    return {
+      slug: toSlug(row[0] ?? ""),
+      name: row[0] ?? "",
+      description: row[1] ?? "",
+      address: row[2] ?? "",
+      image: row[3] ?? "",
+      category,
+      categoryIcon: iconMap.get(category.toLowerCase()) ?? "",
+      link: row[5] ?? "",
+      lat,
+      lng,
+    };
+  });
+
+  setCache(groups, categories);
+  return groups;
+}
+
+export async function fetchGroups(options: { force?: boolean } = {}): Promise<Group[]> {
+  if (!options.force) {
+    const cached = getCached();
+    if (cached) return cached.groups;
+  }
 
   if (pendingPromise) return pendingPromise;
 
   pendingPromise = (async () => {
     try {
-      const [groupsRes, categories] = await Promise.all([
-        fetch(GROUPS_URL),
-        fetchCategories(),
-      ]);
-
-      if (!groupsRes.ok) throw new Error(`API error: ${groupsRes.status}`);
-
-      const data = await groupsRes.json();
-      const [, ...rows] = data.values as string[][];
-
-      const iconMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.icon]));
-
-      const groups = rows.map((row) => {
-        const { lat, lng } = parseLocation(row[6] ?? "");
-        const category = row[4] ?? "";
-        return {
-          slug: toSlug(row[0] ?? ""),
-          name: row[0] ?? "",
-          description: row[1] ?? "",
-          address: row[2] ?? "",
-          image: row[3] ?? "",
-          category,
-          categoryIcon: iconMap.get(category.toLowerCase()) ?? "",
-          link: row[5] ?? "",
-          lat,
-          lng,
-        };
-      });
-
-      setCache(groups, categories);
-      return groups;
+      return await fetchFromNetwork();
     } finally {
       pendingPromise = null;
     }
