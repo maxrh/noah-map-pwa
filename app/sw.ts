@@ -213,11 +213,21 @@ async function cacheRsc(cache: Cache, route: string): Promise<boolean> {
   return false;
 }
 
+async function broadcast(message: { type: string; [k: string]: unknown }) {
+  const clients = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  for (const client of clients) client.postMessage(message);
+}
+
 self.addEventListener("install", (event) => {
   const BATCH_SIZE = 3;
   event.waitUntil(
     Promise.all([caches.open(PAGES_CACHE), caches.open(RSC_CACHE)]).then(
       async ([pages, rsc]) => {
+        await broadcast({ type: "SW_INSTALL_START" });
+
         // Seed dynamic shells first.
         await Promise.all(
           DYNAMIC_SHELL_SEEDS.map((route) =>
@@ -240,6 +250,12 @@ self.addEventListener("install", (event) => {
           );
           ok += results.filter(Boolean).length;
         }
+
+        await broadcast({
+          type: "SW_INSTALL_DONE",
+          cached: ok,
+          total: PRECACHE_ROUTES.length,
+        });
 
         if (process.env.NODE_ENV !== "production") {
           console.log(
