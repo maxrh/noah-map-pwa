@@ -3,6 +3,7 @@ import { Roboto } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { SearchProvider } from "@/lib/search-context";
 import { PwaInit } from "./pwa-init";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_LOCALE, OG_IMAGE } from "@/lib/seo";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -11,30 +12,50 @@ const roboto = Roboto({
   variable: "--font-sans",
 });
 
-const APP_NAME = "NOAH Kort";
-const APP_DESCRIPTION = "Find NOAHs afdelinger og grupper på kortet";
-
 export const metadata: Metadata = {
-  applicationName: APP_NAME,
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
   title: {
-    default: APP_NAME,
-    template: `%s — ${APP_NAME}`,
+    default: SITE_NAME,
+    template: `%s — ${SITE_NAME}`,
   },
-  description: APP_DESCRIPTION,
+  description: SITE_DESCRIPTION,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: APP_NAME,
+    title: SITE_NAME,
   },
   formatDetection: {
     telephone: false,
   },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
-    siteName: APP_NAME,
-    title: APP_NAME,
-    description: APP_DESCRIPTION,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: SITE_LOCALE,
+    images: [{ url: OG_IMAGE, width: 512, height: 512, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   icons: {
     icon: "/icon.png",
