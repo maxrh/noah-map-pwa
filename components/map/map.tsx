@@ -11,8 +11,6 @@ import { CompassControl, replaceControlIcons } from "./map-controls";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY;
 const SOURCE_ID = "groups";
-const CLUSTER_LAYER = "clusters";
-const CLUSTER_COUNT_LAYER = "cluster-count";
 
 // Denmark center coordinates
 const DENMARK_CENTER: [number, number] = [10.45, 55.6];
@@ -41,25 +39,66 @@ function getIconSvg(iconName: string, size = 18, stroke = "white"): string {
 }
 
 function createMarkerElement(iconName?: string): HTMLElement {
+  // Outer element is owned by MapLibre (it sets transform + opacity each frame).
+  // Inner element holds visuals + opacity transition so MapLibre doesn't override.
   const el = document.createElement("div");
   el.className = "poi-marker";
   el.style.width = "36px";
   el.style.height = "36px";
-  el.style.borderRadius = "50%";
-  el.style.backgroundColor = "#00ae5a";
-  el.style.border = "2px solid #DBF1E0";
   el.style.cursor = "pointer";
-  el.style.display = "flex";
-  el.style.alignItems = "center";
-  el.style.justifyContent = "center";
-  el.style.transition = "opacity 0.15s ease-out";
-  el.style.opacity = "1";
+
+  const inner = document.createElement("div");
+  inner.style.cssText =
+    "width:100%;height:100%;border-radius:50%;background-color:#00ae5a;" +
+    "border:2px solid #DBF1E0;display:flex;align-items:center;" +
+    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);" +
+    "box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1);";
 
   const svg = iconName ? getIconSvg(iconName) : "";
   if (svg) {
-    el.innerHTML = svg;
+    inner.innerHTML = svg;
   }
+  el.appendChild(inner);
   return el;
+}
+
+function createClusterElement(count: number): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "cluster-marker";
+  el.style.width = "44px";
+  el.style.height = "44px";
+  el.style.cursor = "pointer";
+
+  const inner = document.createElement("div");
+  inner.style.cssText =
+    "width:100%;height:100%;border-radius:50%;background-color:#168c49;" +
+    "border:2px solid #DBF1E0;color:#ffffff;font-weight:500;font-size:14px;" +
+    "font-family:'Roboto',sans-serif;display:flex;align-items:center;" +
+    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);" +
+    "box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1);";
+  inner.textContent = String(count);
+  el.appendChild(inner);
+  return el;
+}
+
+/** Fade element to 0 then remove the marker. Safe to call multiple times. */
+function fadeOutAndRemove(marker: maplibregl.Marker) {
+  const el = marker.getElement();
+  if (el.dataset.removing === "1") return;
+  el.dataset.removing = "1";
+  const inner = el.firstElementChild as HTMLElement | null;
+  if (inner) {
+    // Commit current opacity before fading so the transition always runs,
+    // even if a fade-in just started (force reflow).
+    void inner.offsetHeight;
+    inner.style.opacity = "0";
+  }
+  window.setTimeout(() => marker.remove(), 300);
+}
+
+/** Fade marker in. Synchronous reflow avoids races with later fade-out calls. */
+function fadeIn(_marker: maplibregl.Marker) {
+  // Markers appear instantly. We only animate the fade-out.
 }
 
 function escapeHtml(str: string): string {
@@ -141,7 +180,7 @@ export function Map() {
     validSlugs.current = new Set(filtered.map((g) => g.slug));
     for (const id in markersOnScreen.current) {
       if (!validSlugs.current.has(id)) {
-        markersOnScreen.current[id].remove();
+        fadeOutAndRemove(markersOnScreen.current[id]);
         delete markersOnScreen.current[id];
       }
     }
@@ -149,7 +188,7 @@ export function Map() {
     source.setData(groupsToGeoJSON(filtered));
   }, [query, selectedCategory]);
 
-  // Sync DOM markers for unclustered points visible on screen
+  // Sync DOM markers for clusters and unclustered points visible on screen
   const updateMarkers = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -160,16 +199,40 @@ export function Map() {
 
     for (const feature of features) {
       const props = feature.properties;
-      if (!props || props.cluster) continue;
+      if (!props) continue;
+      const coords = (feature.geometry as GeoJSON.Point).coordinates as [number, number];
 
+      // Cluster bubble
+      if (props.cluster) {
+        const id = `cluster-${props.cluster_id}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+
+        let marker = markersOnScreen.current[id];
+        if (!marker) {
+          const el = createClusterElement(props.point_count as number);
+          el.addEventListener("click", () => {
+            const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
+            source.getClusterExpansionZoom(props.cluster_id as number).then((zoom) => {
+              map.easeTo({ center: coords, zoom: zoom + 0.5 });
+            });
+          });
+          marker = new maplibregl.Marker({ element: el }).setLngLat(coords);
+        }
+
+        newMarkers[id] = marker;
+        if (!markersOnScreen.current[id]) {
+          marker.addTo(map);
+          fadeIn(marker);
+        }
+        continue;
+      }
+
+      // POI marker
       const id = props.slug as string;
-
-      // Skip stale features and dedup across tile boundaries
       if (!validSlugs.current.has(id)) continue;
       if (seen.has(id)) continue;
       seen.add(id);
-
-      const coords = (feature.geometry as GeoJSON.Point).coordinates as [number, number];
 
       let marker = markersOnScreen.current[id];
       if (!marker) {
@@ -186,13 +249,14 @@ export function Map() {
 
       if (!markersOnScreen.current[id]) {
         marker.addTo(map);
+        fadeIn(marker);
       }
     }
 
-    // Remove markers no longer valid
+    // Remove markers no longer present (POIs and clusters)
     for (const id in markersOnScreen.current) {
       if (!newMarkers[id]) {
-        markersOnScreen.current[id].remove();
+        fadeOutAndRemove(markersOnScreen.current[id]);
       }
     }
 
@@ -228,7 +292,7 @@ export function Map() {
 
     const map = new maplibregl.Map({
       attributionControl: false,
-      fadeDuration: 0,
+      fadeDuration: 300,
       container: mapContainerRef.current,
       style: {
         version: 8,
@@ -248,6 +312,7 @@ export function Map() {
       },
       center: DENMARK_CENTER,
       zoom: INITIAL_ZOOM,
+      minZoom: INITIAL_ZOOM,
     });
 
     mapRef.current = map;
@@ -274,6 +339,7 @@ export function Map() {
     map.on("load", () => {
       map.resize();
 
+      // Generate cluster bubble icons (3 sizes) so circle + text fade together as one symbol layer
       // Add clustered GeoJSON source
       map.addSource(SOURCE_ID, {
         type: "geojson",
@@ -283,60 +349,14 @@ export function Map() {
         clusterRadius: 30,
       });
 
-      // Cluster circle layer
+      // Clusters and POIs are rendered as HTML markers in updateMarkers().
+      // We still need an invisible layer so MapLibre tiles the source –
+      // querySourceFeatures only returns features from rendered tiles.
       map.addLayer({
-        id: CLUSTER_LAYER,
+        id: "groups-tiler",
         type: "circle",
         source: SOURCE_ID,
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": "#168c49",
-          "circle-radius": ["step", ["get", "point_count"], 18, 5, 22, 10, 28],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#DBF1E0",
-        },
-      });
-
-      // Cluster count label layer
-      map.addLayer({
-        id: CLUSTER_COUNT_LAYER,
-        type: "symbol",
-        source: SOURCE_ID,
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": "{point_count_abbreviated}",
-          "text-font": ["Noto Sans Medium"],
-          "text-size": 14,
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-        },
-        paint: {
-          "text-color": "#ffffff",
-        },
-      });
-
-      // Click cluster → zoom to expand
-      map.on("click", CLUSTER_LAYER, (e) => {
-        const features = map.queryRenderedFeatures(e.point, {
-          layers: [CLUSTER_LAYER],
-        });
-        if (!features.length) return;
-        const clusterId = features[0].properties.cluster_id;
-        const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource;
-        source.getClusterExpansionZoom(clusterId).then((zoom) => {
-          map.easeTo({
-            center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
-            zoom: zoom + 0.5,
-          });
-        });
-      });
-
-      // Cursor pointer on clusters
-      map.on("mouseenter", CLUSTER_LAYER, () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", CLUSTER_LAYER, () => {
-        map.getCanvas().style.cursor = "";
+        paint: { "circle-radius": 0, "circle-opacity": 0 },
       });
 
       // Sync DOM markers when source data settles and on pan/zoom

@@ -115,7 +115,7 @@ export function CategoryFilter() {
         <CategoryBadge
           category="Alle"
           className={cn(
-            "cursor-pointer transition-opacity",
+            "cursor-pointer transition-opacity shadow-md",
             selectedCategory !== null && "opacity-50"
           )}
         />
@@ -135,7 +135,7 @@ export function CategoryFilter() {
             category={cat.name}
             iconName={cat.icon}
             className={cn(
-              "cursor-pointer transition-opacity",
+              "cursor-pointer transition-opacity shadow-md",
               selectedCategory !== null &&
                 selectedCategory !== cat.name &&
                 "opacity-50"
