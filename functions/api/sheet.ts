@@ -12,13 +12,18 @@ interface Env {
   SHEETS_API_KEY: string;
 }
 
+interface EventContext {
+  request: Request;
+  env: Env;
+}
+
 const ALLOWED_RANGES = new Set([
   "Grupper!A1:G100",
   "Kategorier!A1:B100",
   "Sider!A1:F100",
 ]);
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export const onRequestGet = async (context: EventContext): Promise<Response> => {
   const url = new URL(context.request.url);
   const range = url.searchParams.get("range");
 
@@ -35,15 +40,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     range
   )}?key=${SHEETS_API_KEY}`;
 
-  // Use Cloudflare's fetch cache by passing a stable cache key via cf options.
-  // The Cache-Control header below also makes the response itself cacheable
-  // by the edge in front of the function.
-  const upstreamRes = await fetch(upstream, {
-    cf: {
-      cacheTtl: 1800,
-      cacheEverything: true,
-    },
-  });
+  const upstreamRes = await fetch(upstream);
 
   if (!upstreamRes.ok) {
     return new Response(`Upstream error: ${upstreamRes.status}`, {

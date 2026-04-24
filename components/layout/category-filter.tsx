@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useRef, useState } from "react";
 import { useSearch } from "@/lib/search-context";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { cn } from "@/lib/utils";
@@ -9,8 +9,12 @@ const DRAG_THRESHOLD = 5; // px before a press becomes a drag
 
 function useDragScroll<T extends HTMLElement>() {
   const [isDragging, setIsDragging] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   const ref = useCallback((el: T | null) => {
+    // Detach any previous element's listeners
+    cleanupRef.current?.();
+    cleanupRef.current = null;
     if (!el) return;
 
     let pointerDown = false;
@@ -61,6 +65,14 @@ function useDragScroll<T extends HTMLElement>() {
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
     el.addEventListener("click", onClickCapture, true);
+
+    cleanupRef.current = () => {
+      el.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      el.removeEventListener("click", onClickCapture, true);
+    };
   }, []);
 
   return { ref, isDragging };
@@ -86,10 +98,12 @@ export function CategoryFilter() {
   return (
     <div
       ref={scrollRef}
+      role="group"
+      aria-label="Filtrer efter kategori"
       className={cn(
         "flex gap-1 overflow-x-auto scrollbar-none px-4 select-none",
         isDragging
-          ? "cursor-grabbing [&_*]:!cursor-grabbing"
+          ? "cursor-grabbing **:cursor-grabbing!"
           : "cursor-grab"
       )}
     >

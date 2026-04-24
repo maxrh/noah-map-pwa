@@ -45,10 +45,10 @@ export function SearchBar({
     setFocused(false);
     if (pathname !== "/") {
       router.push("/");
-      setTimeout(() => flyTo(slug), 500);
-    } else {
-      flyTo(slug);
     }
+    // The search context queues fly-to calls if the map isn't mounted yet,
+    // so we can call this unconditionally without a setTimeout race.
+    flyTo(slug);
   }
 
   return (
@@ -90,7 +90,6 @@ export function SearchBar({
 
         {showSuggestions && (
           <ul
-            role="listbox"
             aria-label="Søgeforslag"
             className="absolute z-50 bottom-full left-0 right-0 mb-1 bg-popover shadow-lg overflow-hidden"
           >

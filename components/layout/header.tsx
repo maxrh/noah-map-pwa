@@ -12,6 +12,15 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
   const router = useRouter();
   const isSubPage = pathname !== "/";
 
+  function handleBack() {
+    // Fall back to home when there's no in-app history (deep link / PWA launch)
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  }
+
   return (
     <header
       className={cn(
@@ -41,7 +50,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
             size="icon"
             aria-label="Tilbage"
             title="Tilbage"
-            onClick={() => router.back()}
+            onClick={handleBack}
           >
             <MoveLeft className="size-5" />
           </Button>
