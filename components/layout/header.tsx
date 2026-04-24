@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Info, List, MoveLeft } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useSearch } from "@/lib/search-context";
+import { StatusIndicator } from "@/components/layout/status-indicator";
 import { cn } from "@/lib/utils";
 
 export function Header({ transparent = false }: { transparent?: boolean }) {
@@ -53,6 +54,8 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           className="h-14 w-auto -translate-y-px"
         />
       </Link>
+
+      <StatusIndicator />
 
       <nav
         aria-label="Hovednavigation"
