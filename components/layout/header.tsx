@@ -65,7 +65,6 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
             aria-label="Tilbage"
             title="Tilbage"
             onClick={handleBack}
-            className="hover:bg-accent"
           >
             <MoveLeft className="size-5" />
           </Button>
@@ -74,7 +73,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           href="/om"
           aria-label="Om appen"
           title="Om appen"
-          className={cn(buttonVariants({ variant: "secondary", size: "icon" }), "hover:bg-border")}
+          className={buttonVariants({ variant: "secondary", size: "icon" })}
         >
           <Info className="size-5" />
         </Link>
@@ -82,7 +81,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           href="/liste"
           aria-label="Listevisning"
           title="Listevisning"
-          className={cn(buttonVariants({ variant: "secondary", size: "icon" }), "hover:bg-border")}
+          className={buttonVariants({ variant: "secondary", size: "icon" })}
         >
           <List className="size-5" />
         </Link>
