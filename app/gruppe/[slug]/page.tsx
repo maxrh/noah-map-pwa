@@ -6,18 +6,17 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useSearch } from "@/lib/search-context";
-import { PageWrapper } from "@/components/layout/page-wrapper";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { ErrorPage } from "@/components/layout/error-page";
 import {
   TypographyH1,
-  TypographyH3,
   TypographyP,
   TypographyMuted,
 } from "@/components/ui/typography";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoveRight, MapPin } from "lucide-react";
+import { MoveRight, MapPin, MoveLeft, List } from "lucide-react";
 
 function GroupImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -91,12 +90,14 @@ export default function GroupDetailPage() {
     );
   if (notFound || !group)
     return (
-      <PageWrapper>
-        <TypographyH3 className="mb-4">Gruppe ikke fundet</TypographyH3>
-        <Link href="/" className={buttonVariants({ variant: "outline" })}>
-          Tilbage til kort
-        </Link>
-      </PageWrapper>
+      <ErrorPage
+        title="Gruppe ikke fundet"
+        description="Vi kunne ikke finde den gruppe, du leder efter."
+        actions={[
+          { label: "Tilbage til kort", href: "/", icon: <MoveLeft /> },
+          { label: "Se liste", href: "/liste", icon: <List /> },
+        ]}
+      />
     );
 
   return (
