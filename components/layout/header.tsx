@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Info, List, MoveLeft } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Header({ transparent = false }: { transparent?: boolean }) {
   const pathname = usePathname();
-  const isDetailPage = pathname.startsWith("/gruppe/");
+  const router = useRouter();
+  const isSubPage = pathname !== "/";
 
   return (
     <header
@@ -34,16 +35,16 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
       <div
         className={cn("flex items-center gap-2 shrink-0 ml-auto")}
       >
-        {isDetailPage && (
-          <Link
-            href="/"
-            aria-label="Tilbage til kort"
-            title="Tilbage til kort"
-            className={buttonVariants({ variant: "link" })}
+        {isSubPage && (
+          <Button
+            variant="default"
+            size="icon"
+            aria-label="Tilbage"
+            title="Tilbage"
+            onClick={() => router.back()}
           >
             <MoveLeft className="size-5" />
-            Kort
-          </Link>
+          </Button>
         )}
         <Link
           href="/om"

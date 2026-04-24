@@ -14,8 +14,7 @@ function FlyToHandler() {
 
   useEffect(() => {
     if (flyToSlug) {
-      const timeout = setTimeout(() => flyTo(flyToSlug), 600);
-      return () => clearTimeout(timeout);
+      flyTo(flyToSlug);
     }
   }, [flyToSlug, flyTo]);
 

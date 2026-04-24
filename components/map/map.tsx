@@ -223,10 +223,7 @@ export function Map() {
   }, [updateMarkers]);
 
   useEffect(() => {
-    registerFlyTo(handleFlyTo);
-  }, [registerFlyTo, handleFlyTo]);
 
-  useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
@@ -264,7 +261,10 @@ export function Map() {
     map.addControl(geolocate, "top-right");
 
     // Inject compass button into the geolocate control group
-    const compass = new CompassControl(map);
+    const compass = new CompassControl(map, {
+      center: DENMARK_CENTER,
+      zoom: INITIAL_ZOOM,
+    });
     compass.injectInto(mapContainerRef.current!);
     compassRef.current = compass;
 
@@ -387,6 +387,17 @@ export function Map() {
     updateSource();
     updateMarkers();
   }, [groups, mapReady, updateSource, updateMarkers]);
+
+  // Expose flyTo only after map + groups are ready (groupsRef populated above)
+  useEffect(() => {
+    if (!mapReady || !groups.length) return;
+    registerFlyTo(handleFlyTo);
+    return () => {
+      // Unregister on unmount/re-run so context queues subsequent calls
+      // until a new map instance is ready.
+      registerFlyTo(null);
+    };
+  }, [registerFlyTo, handleFlyTo, mapReady, groups.length]);
 
   return (
     <div

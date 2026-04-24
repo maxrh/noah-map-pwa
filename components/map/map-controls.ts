@@ -13,13 +13,20 @@ const LUCIDE_COMPASS = `<svg ${LUCIDE_ATTRS}><circle cx="12" cy="12" r="10"/><pa
 // CompassControl – injected into the geolocate control group
 // ---------------------------------------------------------------------------
 
+export interface CompassResetOptions {
+  center?: [number, number];
+  zoom?: number;
+}
+
 export class CompassControl {
   private _map: maplibregl.Map;
   private _button: HTMLButtonElement | null = null;
   private _iconEl: SVGSVGElement | null = null;
+  private _resetOptions: CompassResetOptions;
 
-  constructor(map: maplibregl.Map) {
+  constructor(map: maplibregl.Map, resetOptions: CompassResetOptions = {}) {
     this._map = map;
+    this._resetOptions = resetOptions;
   }
 
   injectInto(container: HTMLElement): void {
@@ -38,7 +45,13 @@ export class CompassControl {
     this._button = button;
 
     button.addEventListener("click", () => {
-      this._map.easeTo({ bearing: 0, pitch: 0, duration: 300 });
+      this._map.easeTo({
+        bearing: 0,
+        pitch: 0,
+        ...(this._resetOptions.center && { center: this._resetOptions.center }),
+        ...(this._resetOptions.zoom !== undefined && { zoom: this._resetOptions.zoom }),
+        duration: 600,
+      });
     });
 
     group.insertBefore(button, geolocateBtn);
