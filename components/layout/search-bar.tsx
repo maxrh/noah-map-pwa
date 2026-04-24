@@ -52,7 +52,13 @@ export function SearchBar({
   }
 
   return (
-    <div className={cn("px-4", className)}>
+    <div
+      className={cn("px-4", className)}
+      style={{
+        paddingLeft: "calc(1rem + env(safe-area-inset-left))",
+        paddingRight: "calc(1rem + env(safe-area-inset-right))",
+      }}
+    >
       <div className="relative">
         <InputGroup className="shadow-md h-12 bg-input focus-within:ring-3 focus-within:ring-ring/50">
           <InputGroupInput

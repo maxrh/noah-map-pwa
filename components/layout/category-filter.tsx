@@ -100,6 +100,10 @@ export function CategoryFilter() {
       ref={scrollRef}
       role="group"
       aria-label="Filtrer efter kategori"
+      style={{
+        paddingLeft: "calc(1rem + env(safe-area-inset-left))",
+        paddingRight: "calc(1rem + env(safe-area-inset-right))",
+      }}
       className={cn(
         "flex gap-1 overflow-x-auto scrollbar-none px-4 py-2 select-none",
         isDragging
