@@ -53,7 +53,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
       </Link>
 
       <div
-        className={cn("flex items-center gap-2 shrink-0 ml-auto")}
+        className={cn("flex items-center gap-2 shrink-0 ml-auto", transparent && "[&>*]:shadow-md")}
       >
         {isSubPage && (
           <Button
@@ -62,6 +62,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
             aria-label="Tilbage"
             title="Tilbage"
             onClick={handleBack}
+            className="hover:bg-accent"
           >
             <MoveLeft className="size-5" />
           </Button>
@@ -70,7 +71,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           href="/om"
           aria-label="Om appen"
           title="Om appen"
-          className={buttonVariants({ variant: "secondary", size: "icon" })}
+          className={cn(buttonVariants({ variant: "secondary", size: "icon" }), "hover:bg-border")}
         >
           <Info className="size-5" />
         </Link>
@@ -78,7 +79,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           href="/liste"
           aria-label="Listevisning"
           title="Listevisning"
-          className={buttonVariants({ variant: "secondary", size: "icon" })}
+          className={cn(buttonVariants({ variant: "secondary", size: "icon" }), "hover:bg-border")}
         >
           <List className="size-5" />
         </Link>

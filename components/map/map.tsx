@@ -51,7 +51,8 @@ function createMarkerElement(iconName?: string): HTMLElement {
   inner.style.cssText =
     "width:100%;height:100%;border-radius:50%;background-color:#00ae5a;" +
     "border:2px solid #DBF1E0;display:flex;align-items:center;" +
-    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);";
+    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);" +
+    "box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1);";
 
   const svg = iconName ? getIconSvg(iconName) : "";
   if (svg) {
@@ -73,7 +74,8 @@ function createClusterElement(count: number): HTMLElement {
     "width:100%;height:100%;border-radius:50%;background-color:#168c49;" +
     "border:2px solid #DBF1E0;color:#ffffff;font-weight:500;font-size:14px;" +
     "font-family:'Roboto',sans-serif;display:flex;align-items:center;" +
-    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);";
+    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);" +
+    "box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -2px rgba(0,0,0,0.1);";
   inner.textContent = String(count);
   el.appendChild(inner);
   return el;
@@ -310,6 +312,7 @@ export function Map() {
       },
       center: DENMARK_CENTER,
       zoom: INITIAL_ZOOM,
+      minZoom: INITIAL_ZOOM,
     });
 
     mapRef.current = map;
