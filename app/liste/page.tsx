@@ -55,7 +55,7 @@ export default function ListePage() {
     <div className="flex-1 overflow-y-auto">
       <SearchBar
         showSuggestions={false}
-        className="fixed bottom-4 left-0 right-0 z-50"
+        className="fixed bottom-4 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
       />
       {grouped.map(([category, { icon, items }]) => {
         const pascalName = icon
