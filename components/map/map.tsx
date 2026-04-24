@@ -290,7 +290,7 @@ export function Map() {
         source: SOURCE_ID,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#00ae5a",
+          "circle-color": "#168c49",
           "circle-radius": ["step", ["get", "point_count"], 18, 5, 22, 10, 28],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
