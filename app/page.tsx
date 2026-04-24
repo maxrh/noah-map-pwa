@@ -25,7 +25,7 @@ export default function Home() {
   return (
     <>
       <Map />
-      <div className="fixed bottom-4 left-0 right-0 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <div className="fixed bottom-4 left-0 right-0 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)]">
         <CategoryFilter />
         <SearchBar />
       </div>
