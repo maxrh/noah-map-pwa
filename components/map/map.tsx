@@ -51,7 +51,7 @@ function createMarkerElement(iconName?: string): HTMLElement {
   inner.style.cssText =
     "width:100%;height:100%;border-radius:50%;background-color:#00ae5a;" +
     "border:2px solid #DBF1E0;display:flex;align-items:center;" +
-    "justify-content:center;opacity:0;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);";
+    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);";
 
   const svg = iconName ? getIconSvg(iconName) : "";
   if (svg) {
@@ -62,11 +62,10 @@ function createMarkerElement(iconName?: string): HTMLElement {
 }
 
 function createClusterElement(count: number): HTMLElement {
-  const size = count >= 10 ? 56 : count >= 5 ? 44 : 36;
   const el = document.createElement("div");
   el.className = "cluster-marker";
-  el.style.width = `${size}px`;
-  el.style.height = `${size}px`;
+  el.style.width = "44px";
+  el.style.height = "44px";
   el.style.cursor = "pointer";
 
   const inner = document.createElement("div");
@@ -74,7 +73,7 @@ function createClusterElement(count: number): HTMLElement {
     "width:100%;height:100%;border-radius:50%;background-color:#168c49;" +
     "border:2px solid #DBF1E0;color:#ffffff;font-weight:500;font-size:14px;" +
     "font-family:'Roboto',sans-serif;display:flex;align-items:center;" +
-    "justify-content:center;opacity:0;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);";
+    "justify-content:center;transition:opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);";
   inner.textContent = String(count);
   el.appendChild(inner);
   return el;
@@ -86,8 +85,18 @@ function fadeOutAndRemove(marker: maplibregl.Marker) {
   if (el.dataset.removing === "1") return;
   el.dataset.removing = "1";
   const inner = el.firstElementChild as HTMLElement | null;
-  if (inner) inner.style.opacity = "0";
+  if (inner) {
+    // Commit current opacity before fading so the transition always runs,
+    // even if a fade-in just started (force reflow).
+    void inner.offsetHeight;
+    inner.style.opacity = "0";
+  }
   window.setTimeout(() => marker.remove(), 300);
+}
+
+/** Fade marker in. Synchronous reflow avoids races with later fade-out calls. */
+function fadeIn(_marker: maplibregl.Marker) {
+  // Markers appear instantly. We only animate the fade-out.
 }
 
 function escapeHtml(str: string): string {
@@ -212,8 +221,7 @@ export function Map() {
         newMarkers[id] = marker;
         if (!markersOnScreen.current[id]) {
           marker.addTo(map);
-          const inner = marker.getElement().firstElementChild as HTMLElement | null;
-          if (inner) requestAnimationFrame(() => { inner.style.opacity = "1"; });
+          fadeIn(marker);
         }
         continue;
       }
@@ -239,8 +247,7 @@ export function Map() {
 
       if (!markersOnScreen.current[id]) {
         marker.addTo(map);
-        const inner = marker.getElement().firstElementChild as HTMLElement | null;
-        if (inner) requestAnimationFrame(() => { inner.style.opacity = "1"; });
+        fadeIn(marker);
       }
     }
 
