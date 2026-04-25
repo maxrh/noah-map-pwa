@@ -8,7 +8,7 @@ export default function NotFound() {
       description="Vi kunne ikke finde den side, du leder efter."
       actions={[
         { label: "Tilbage til kort", href: "/", icon: <MoveLeft /> },
-        { label: "Se liste", href: "/liste", icon: <List /> },
+        { label: "Se liste", href: "/grupper", icon: <List /> },
       ]}
     />
   );

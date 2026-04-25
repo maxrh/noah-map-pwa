@@ -82,7 +82,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           <Info className="size-5" />
         </Link>
         <Link
-          href="/liste"
+          href="/grupper"
           aria-label="Listevisning"
           title="Listevisning"
           className={buttonVariants({ variant: "secondary", size: "icon" })}

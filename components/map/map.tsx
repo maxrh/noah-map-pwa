@@ -146,7 +146,7 @@ function createPopupHTML(props: {
     <div style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 6px;border-radius:9999px;background:#f5f5f5;font-size:12px;font-weight:500;color:#555;margin-bottom:16px">${iconSvg}${escapeHtml(props.category)}</div>
     <h2 style="margin:0 0 4px;font-size:18px;font-weight:bold;line-height:1.3">${escapeHtml(props.name)}</h2>
     <p style="margin:0 0 16px;font-size:13px">${escapeHtml(props.address)}</p>
-    <a href="/gruppe/${encodeURIComponent(props.slug)}" class="popup-cta">Læs mere</a>
+    <a href="/grupper/${encodeURIComponent(props.slug)}" class="popup-cta">Læs mere</a>
   </div>`;
 }
 

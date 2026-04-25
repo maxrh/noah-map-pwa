@@ -25,18 +25,18 @@ const PAGES_CACHE = "pages";
 const RSC_CACHE = "rsc";
 
 // Dynamic route patterns whose cached shells can be reused for any ID.
-// `/gruppe/[slug]` is "use client" + reads the slug via usePathname() and
+// `/grupper/[slug]` is "use client" + reads the slug via usePathname() and
 // loads group data from localStorage, so the shell HTML/RSC is identical
 // for every slug — one cached entry covers all groups.
 const DYNAMIC_ROUTE_SHELLS: Record<string, RegExp> = {
-  gruppe: /^\/gruppe\/[^/]+$/,
+  gruppe: /^\/grupper\/[^/]+$/,
 };
 
 // Seed at install time so the dynamic shell fallback always has something
 // to serve. The slug doesn't have to exist — the page renders a not-found
 // UI for unknown slugs, but the SHELL (header, layout, client bundle) is
 // identical to a real group page.
-const DYNAMIC_SHELL_SEEDS = ["/gruppe/seed"];
+const DYNAMIC_SHELL_SEEDS = ["/grupper/seed"];
 
 // Map style assets MapLibre re-fetches on every map init. If any of these
 // miss the cache offline, the basemap goes blank (no tile URL template,
@@ -185,14 +185,14 @@ const serwist = new Serwist({
               response && response.status === 200 ? response : null,
           },
           {
-            // Offline RSC fallback for dynamic /gruppe/[slug] routes.
+            // Offline RSC fallback for dynamic /grupper/[slug] routes.
             //
             // Serving any cached RSC matching the pattern lets Next's client
             // router perform a normal SPA transition — no full page reload,
             // so the persistent app shell (Header, StatusIndicator) stays
-            // mounted. The RSC payload encodes /gruppe/seed as its canonical
+            // mounted. The RSC payload encodes /grupper/seed as its canonical
             // pathname, but the page reads its slug from window.location
-            // (see app/gruppe/[slug]/page.tsx), so the real slug is honored.
+            // (see app/grupper/[slug]/page.tsx), so the real slug is honored.
             //
             // Falls back to Response.error() (→ MPA reload via navigation
             // handler) only if no shell RSC is cached.
