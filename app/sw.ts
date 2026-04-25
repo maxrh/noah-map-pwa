@@ -5,6 +5,7 @@ import { defaultCache } from "@serwist/next/worker";
 import {
   Serwist,
   StaleWhileRevalidate,
+  NetworkFirst,
   CacheFirst,
   ExpirationPlugin,
   type PrecacheEntry,
@@ -62,13 +63,15 @@ const serwist = new Serwist({
         }
       })(),
     },
-    // Navigation requests (HTML) — SWR with a smart fallback for unknown
-    // dynamic routes when offline.
+    // Navigation requests (HTML) — NetworkFirst so the served HTML always
+    // references the current build's JS chunks. Falls back to cache only
+    // when offline, with a smart fallback for unknown dynamic routes.
     {
       matcher: ({ request }) =>
         request.mode === "navigate" && !request.headers.get("RSC"),
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: PAGES_CACHE,
+        networkTimeoutSeconds: 5,
         plugins: [
           {
             cacheWillUpdate: async ({ response }) =>
@@ -99,14 +102,19 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // RSC payloads — the "app shell" for client-side navigation. ignoreSearch
-    // strips cache-busting `?_rsc=…`, ignoreVary sidesteps Next-Router-State-Tree
-    // mismatches.
+    // RSC payloads — the "app shell" for client-side navigation.
+    // NetworkFirst: always try fresh from origin so RSC payloads match the
+    // current build's JS chunk hashes (a stale RSC from a previous build
+    // references chunks that no longer exist → silent hydration failure →
+    // blank page). Falls back to cache when offline.
+    // ignoreSearch strips cache-busting `?_rsc=…`; ignoreVary sidesteps
+    // Next-Router-State-Tree mismatches when matching offline fallback.
     {
       matcher: ({ request, sameOrigin }) =>
         sameOrigin && request.headers.get("RSC") === "1",
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: RSC_CACHE,
+        networkTimeoutSeconds: 5,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
           {
