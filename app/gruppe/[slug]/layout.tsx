@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { findGroupRowBySlug } from "@/lib/sheets-server";
 
+export const runtime = "edge";
+
 interface GroupMeta {
   slug: string;
   name: string;

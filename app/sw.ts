@@ -24,6 +24,20 @@ declare const self: ServiceWorkerGlobalScope;
 const PAGES_CACHE = "pages";
 const RSC_CACHE = "rsc";
 
+// Dynamic route patterns whose cached shells can be reused for any ID.
+// `/gruppe/[slug]` is "use client" + reads the slug via usePathname() and
+// loads group data from localStorage, so the shell HTML/RSC is identical
+// for every slug — one cached entry covers all groups.
+const DYNAMIC_ROUTE_SHELLS: Record<string, RegExp> = {
+  gruppe: /^\/gruppe\/[^/]+$/,
+};
+
+// Seed at install time so the dynamic shell fallback always has something
+// to serve. The slug doesn't have to exist — the page renders a not-found
+// UI for unknown slugs, but the SHELL (header, layout, client bundle) is
+// identical to a real group page.
+const DYNAMIC_SHELL_SEEDS = ["/gruppe/seed"];
+
 // Map style assets MapLibre re-fetches on every map init. If any of these
 // miss the cache offline, the basemap goes blank (no tile URL template,
 // no sprite). Precaching guarantees they're available.
@@ -112,10 +126,9 @@ const serwist = new Serwist({
         }
       })(),
     },
-    // Navigation requests (HTML) — NetworkFirst keeps HTML pointing at the
-    // current build's JS chunks; falls back to whatever's in the pages
-    // cache when offline. Every reachable route (incl. /gruppe/<slug> for
-    // every known group) is pre-cached on install, so this is a hit.
+    // Navigation requests (HTML) — NetworkFirst so the served HTML always
+    // references the current build's JS chunks. Falls back to cache only
+    // when offline, with a smart fallback for unknown dynamic routes.
     {
       matcher: ({ request }) =>
         request.mode === "navigate" && !request.headers.get("RSC"),
@@ -127,13 +140,38 @@ const serwist = new Serwist({
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
           },
+          {
+            handlerDidError: async ({ request }) => {
+              const pathname = new URL(request.url).pathname;
+              for (const pattern of Object.values(DYNAMIC_ROUTE_SHELLS)) {
+                if (pattern.test(pathname)) {
+                  const cache = await caches.open(PAGES_CACHE);
+                  const keys = await cache.keys();
+                  for (const cachedRequest of keys) {
+                    if (pattern.test(new URL(cachedRequest.url).pathname)) {
+                      const cached = await cache.match(cachedRequest);
+                      if (cached) return cached;
+                    }
+                  }
+                }
+              }
+              // Final fallback: app shell ("/") so the client router can
+              // still take over.
+              const shell = await caches.match("/");
+              if (shell) return shell;
+              return new Response("Offline", { status: 503, statusText: "Offline" });
+            },
+          },
         ],
       }),
     },
-    // RSC payloads — NetworkFirst so payloads match the current build's
-    // chunk hashes. ignoreSearch strips Next's `?_rsc=…` cache-buster;
-    // ignoreVary sidesteps Next-Router-State-Tree mismatches when matching
-    // the offline fallback.
+    // RSC payloads — the "app shell" for client-side navigation.
+    // NetworkFirst: always try fresh from origin so RSC payloads match the
+    // current build's JS chunk hashes (a stale RSC from a previous build
+    // references chunks that no longer exist → silent hydration failure →
+    // blank page). Falls back to cache when offline.
+    // ignoreSearch strips cache-busting `?_rsc=…`; ignoreVary sidesteps
+    // Next-Router-State-Tree mismatches when matching offline fallback.
     {
       matcher: ({ request, sameOrigin }) =>
         sameOrigin && request.headers.get("RSC") === "1",
@@ -145,6 +183,20 @@ const serwist = new Serwist({
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
+          },
+          {
+            handlerDidError: async ({ request }) => {
+              // For dynamic /gruppe/[slug] RSC requests we deliberately do
+              // NOT serve the seed RSC: Next's client router reads the
+              // canonical pathname from inside the RSC payload and would
+              // rewrite the URL to /gruppe/seed (showing "ikke fundet").
+              //
+              // Returning Response.error() makes Next fall back to a full
+              // browser navigation, which goes through the navigation
+              // handler → cached HTML shell → client reads slug from URL.
+              void request;
+              return Response.error();
+            },
           },
         ],
       }),
@@ -200,7 +252,7 @@ const serwist = new Serwist({
 });
 
 // ---------------------------------------------------------------------------
-// Install: pre-cache every reachable route (HTML + RSC) plus map assets.
+// Install: pre-cache pages + RSC for every static route + dynamic seeds.
 // ---------------------------------------------------------------------------
 
 async function cachePage(cache: Cache, route: string): Promise<boolean> {
@@ -256,18 +308,21 @@ async function broadcast(message: { type: string; [k: string]: unknown }) {
 }
 
 self.addEventListener("install", (event) => {
-  const BATCH_SIZE = 4;
+  const BATCH_SIZE = 3;
   event.waitUntil(
     Promise.all([caches.open(PAGES_CACHE), caches.open(RSC_CACHE)]).then(
       async ([pages, rsc]) => {
         await broadcast({ type: "SW_INSTALL_START" });
 
-        // Belt-and-braces: explicitly cache /manifest.json (some platforms
-        // re-fetch the manifest outside the SW's control).
+        // Belt-and-braces: explicitly cache /manifest.json. The Serwist
+        // glob in next.config covers it, but browsers re-fetch the manifest
+        // outside the SW's control on some platforms — caching it here
+        // guarantees no offline ERR_INTERNET_DISCONNECTED noise.
         await cachePage(pages, "/manifest.json");
 
-        // Pre-cache map style descriptors (TileJSON + sprite). MapLibre
+        // Pre-cache the map style descriptors (TileJSON + sprite). MapLibre
         // re-fetches these on every map init; missing them = blank basemap.
+        // Each URL goes into the cache its runtime handler uses.
         await Promise.all(
           MAP_STYLE_URLS.map((url) =>
             cacheCrossOrigin(
@@ -279,16 +334,24 @@ self.addEventListener("install", (event) => {
           ),
         );
 
-        // Pre-warm overview tiles so the basemap renders even on a first
-        // session that goes offline before any tile fetches happened.
+        // Pre-warm a small set of overview tiles covering Denmark so the
+        // basemap renders even if the user goes offline during their very
+        // first session (before the SW has had a chance to intercept any
+        // tile requests). ~20 tiles, fired in parallel.
         await Promise.all(
           buildOverviewTileUrls().map((url) =>
             cacheCrossOrigin("protomaps-tiles", url),
           ),
         );
 
-        // Pre-cache every reachable route (incl. /gruppe/<slug> for every
-        // known group). Batched to avoid hammering the origin.
+        // Seed dynamic shells first.
+        await Promise.all(
+          DYNAMIC_SHELL_SEEDS.map((route) =>
+            Promise.all([cachePage(pages, route), cacheRsc(rsc, route)])
+          )
+        );
+
+        // Pre-cache static routes in batches to avoid hammering the origin.
         let ok = 0;
         for (let i = 0; i < PRECACHE_ROUTES.length; i += BATCH_SIZE) {
           const batch = PRECACHE_ROUTES.slice(i, i + BATCH_SIZE);
@@ -312,7 +375,7 @@ self.addEventListener("install", (event) => {
 
         if (process.env.NODE_ENV !== "production") {
           console.log(
-            `[SW] Pre-cached ${ok}/${PRECACHE_ROUTES.length} routes`
+            `[SW] Pre-cached ${ok}/${PRECACHE_ROUTES.length} routes (+${DYNAMIC_SHELL_SEEDS.length} dynamic shell seed(s))`
           );
         }
       }

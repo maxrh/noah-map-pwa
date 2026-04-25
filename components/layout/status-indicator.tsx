@@ -10,10 +10,9 @@ import { Loader2, WifiOff } from "lucide-react";
  * Both states are non-blocking; the app remains usable.
  */
 
-// Subscribe to navigator.onLine via React's external-store primitive so the
-// indicator always renders the current value without state drift. We also
-// listen to pageshow/visibilitychange to refresh after bfcache restores
-// (where online/offline events don't fire).
+// useSyncExternalStore is React's canonical primitive for subscribing to
+// browser state. It guarantees a fresh read on every render, so the
+// indicator stays correct across hard navigations, bfcache restores, etc.
 function subscribeOnline(callback: () => void) {
   window.addEventListener("online", callback);
   window.addEventListener("offline", callback);
@@ -27,7 +26,8 @@ function subscribeOnline(callback: () => void) {
   };
 }
 const getIsOnline = () => navigator.onLine;
-// SSR snapshot: assume online so server markup doesn't show an offline badge.
+// Server snapshot: assume online so SSR markup matches the optimistic case;
+// the client immediately re-reads after mount.
 const getIsOnlineServer = () => true;
 
 export function StatusIndicator() {
