@@ -16,10 +16,6 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 // client) instead of attempting on-demand SSR (which `output: export` /
 // Cloudflare Pages doesn't support anyway).
 export const dynamicParams = false;
-// Tell next-on-pages this route is fully static — without this, the layout's
-// `generateMetadata` (which fetches Sheets) makes the adapter classify the
-// route as needing edge runtime.
-export const dynamic = "force-static";
 
 export default async function GroupDetailPage({
   params,
