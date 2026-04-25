@@ -1,7 +1,10 @@
 /**
- * Generates a list of all static (non-dynamic) routes from the Next.js
- * App Router structure. Run before build to keep the SW pre-cache list
- * in sync with the actual pages on disk.
+ * Generates the SW pre-cache route list.
+ *  - Walks the App Router for all static (non-dynamic) routes
+ *  - Fetches group slugs from Google Sheets and adds /gruppe/<slug> for each
+ *
+ * Run before build (npm run build → prebuild) so the generated list always
+ * matches what Next.js statically renders via generateStaticParams.
  */
 
 import { readdirSync, statSync, writeFileSync } from "fs";
@@ -20,15 +23,12 @@ const EXCLUDED_FOLDERS = [
 
 // Route groups in Next.js: (folder) - traverse but don't add to URL path
 const isRouteGroup = (name) => name.startsWith("(") && name.endsWith(")");
-
 // Private folders: _folder - skip entirely
 const isPrivateFolder = (name) => name.startsWith("_");
-
 // Dynamic route segments: [param] / [...param] / [[...param]]
-// These can't be pre-cached as literal URLs (handled via dynamic shell fallback)
 const isDynamicSegment = (name) => name.startsWith("[") && name.endsWith("]");
 
-function findRoutes(dir, basePath = "") {
+function findStaticRoutes(dir, basePath = "") {
   const routes = [];
   const entries = readdirSync(dir);
 
@@ -38,15 +38,12 @@ function findRoutes(dir, basePath = "") {
 
     if (stat.isDirectory()) {
       if (EXCLUDED_FOLDERS.includes(entry) || isPrivateFolder(entry)) continue;
-
       if (isRouteGroup(entry)) {
-        routes.push(...findRoutes(fullPath, basePath));
+        routes.push(...findStaticRoutes(fullPath, basePath));
         continue;
       }
-
       if (isDynamicSegment(entry)) continue;
-
-      routes.push(...findRoutes(fullPath, `${basePath}/${entry}`));
+      routes.push(...findStaticRoutes(fullPath, `${basePath}/${entry}`));
     } else if (entry === "page.tsx" || entry === "page.ts") {
       routes.push(basePath || "/");
     }
@@ -55,7 +52,54 @@ function findRoutes(dir, basePath = "") {
   return routes;
 }
 
-const routes = findRoutes(APP_DIR).sort();
+/** Slug helper — must match lib/slug.ts. */
+function toSlug(name) {
+  return name
+    .toLowerCase()
+    .replace(/[æ]/g, "ae")
+    .replace(/[ø]/g, "oe")
+    .replace(/[å]/g, "aa")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/**
+ * Fetch group slugs from the Google Sheets API. Returns [] when credentials
+ * are missing (e.g. local dev without env vars) so the build still succeeds.
+ */
+async function fetchGroupSlugs() {
+  const sheetId = process.env.SHEET_ID;
+  const apiKey = process.env.SHEETS_API_KEY;
+  if (!sheetId || !apiKey) {
+    console.warn(
+      "  (no SHEET_ID/SHEETS_API_KEY — group slugs will not be precached)"
+    );
+    return [];
+  }
+  const range = encodeURIComponent("Grupper!A1:G100");
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`  (Sheets API returned ${res.status} — skipping slugs)`);
+      return [];
+    }
+    const data = await res.json();
+    const rows = (data.values ?? []).slice(1); // drop header row
+    return rows
+      .map((row) => toSlug(row?.[0] ?? ""))
+      .filter(Boolean);
+  } catch (err) {
+    console.warn(`  (Sheets fetch failed: ${err.message} — skipping slugs)`);
+    return [];
+  }
+}
+
+const staticRoutes = findStaticRoutes(APP_DIR);
+const slugs = await fetchGroupSlugs();
+const groupRoutes = slugs.map((slug) => `/gruppe/${slug}`);
+
+const routes = [...staticRoutes, ...groupRoutes].sort();
 
 const output = `// AUTO-GENERATED — Do not edit manually.
 // Run \`npm run generate-routes\` (or \`npm run build\`) to update.
@@ -68,6 +112,5 @@ export type PrecacheRoute = (typeof PRECACHE_ROUTES)[number];
 writeFileSync(OUTPUT_FILE, output, "utf-8");
 
 console.log(
-  `\u2713 Generated ${routes.length} routes to ${relative(process.cwd(), OUTPUT_FILE)}`
+  `\u2713 Generated ${routes.length} routes (${staticRoutes.length} static + ${groupRoutes.length} groups) → ${relative(process.cwd(), OUTPUT_FILE)}`
 );
-console.log(routes.map((r) => `  ${r}`).join("\n"));
