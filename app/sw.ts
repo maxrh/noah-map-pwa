@@ -91,6 +91,20 @@ function buildOverviewTileUrls(): string[] {
   return urls;
 }
 
+// Plugin: short-circuit network when navigator.onLine === false.
+// Throws synchronously before fetch is attempted, so NetworkFirst falls
+// back to its cache (or handlerDidError) immediately. Without this, iOS
+// Safari can sit on a hung fetch for the full networkTimeoutSeconds even
+// though the device knows it's offline.
+const offlineShortcut = {
+  requestWillFetch: async ({ request }: { request: Request }) => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      throw new Error("[SW] offline — short-circuiting fetch");
+    }
+    return request;
+  },
+};
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -141,13 +155,16 @@ const serwist = new Serwist({
     // Navigation requests (HTML) — NetworkFirst so the served HTML always
     // references the current build's JS chunks. Falls back to cache only
     // when offline, with a smart fallback for unknown dynamic routes.
+    // Short timeout (2s) so iOS Safari doesn't sit on a hung fetch when
+    // offline — the OS is slow to surface offline state to fetch().
     {
       matcher: ({ request }) =>
         request.mode === "navigate" && !request.headers.get("RSC"),
       handler: new NetworkFirst({
         cacheName: PAGES_CACHE,
-        networkTimeoutSeconds: 5,
+        networkTimeoutSeconds: 2,
         plugins: [
+          offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
@@ -208,6 +225,7 @@ const serwist = new Serwist({
         networkTimeoutSeconds: 2,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
+          offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
