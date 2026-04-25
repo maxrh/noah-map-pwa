@@ -4,7 +4,7 @@ export const runtime = "edge";
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSearch } from "@/lib/search-context";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -54,7 +54,12 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function GroupDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
+  // Derive slug from the live URL rather than useParams(): the SW's dynamic
+  // shell fallback serves a cached RSC payload from /gruppe/seed for any
+  // un-precached group, and useParams() would return "seed" instead of the
+  // real slug from the address bar.
+  const pathname = usePathname();
+  const slug = pathname?.split("/").filter(Boolean).pop() ?? "";
   const { groups, loading } = useSearch();
   const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
   // Stay in loading state until we actually have groups to search through.
@@ -62,17 +67,6 @@ export default function GroupDetailPage() {
   // empty groups array before the localStorage read has resolved.
   const stillBooting = loading || groups.length === 0;
   const notFound = !stillBooting && !group;
-
-  // TEMP diagnostic — remove once offline group navigation is verified.
-  if (typeof window !== "undefined") {
-    console.log("[GroupDetailPage]", {
-      slug,
-      loading,
-      groupsLen: groups.length,
-      stillBooting,
-      foundGroup: !!group,
-    });
-  }
 
   if (stillBooting)
     return (
