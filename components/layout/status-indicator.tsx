@@ -17,12 +17,11 @@ import { Loader2, WifiOff } from "lucide-react";
  * mount (always client-side) and then kept in sync via event listeners.
  */
 export function StatusIndicator() {
-  // Lazy initializer runs once on mount; safe to read navigator here
-  // because this component is "use client" and the parent tree never
-  // renders it during SSR-only paths.
-  const [isOnline, setIsOnline] = useState<boolean>(() =>
-    typeof navigator === "undefined" ? true : navigator.onLine,
-  );
+  // Always start as `true` so client hydration matches the SSR'd markup
+  // (empty span). The effect below flips this on mount if the user is
+  // actually offline — a one-frame visual delay, but no React #418
+  // hydration mismatch when loading the app while offline.
+  const [isOnline, setIsOnline] = useState(true);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
