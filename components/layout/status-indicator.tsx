@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Loader2, WifiOff } from "lucide-react";
-
-type Status = "idle" | "installing" | "offline";
 
 /**
  * Discrete status indicator next to the logo.
@@ -11,71 +9,51 @@ type Status = "idle" | "installing" | "offline";
  *  - "offline": shown whenever the device is offline.
  * Both states are non-blocking; the app remains usable.
  */
+
+// useSyncExternalStore is React's canonical primitive for subscribing to
+// browser state. It guarantees a fresh read on every render, so the
+// indicator stays correct across hard navigations, bfcache restores, etc.
+function subscribeOnline(callback: () => void) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  window.addEventListener("pageshow", callback);
+  document.addEventListener("visibilitychange", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+    window.removeEventListener("pageshow", callback);
+    document.removeEventListener("visibilitychange", callback);
+  };
+}
+const getIsOnline = () => navigator.onLine;
+// Server snapshot: assume online so SSR markup matches the optimistic case;
+// the client immediately re-reads after mount.
+const getIsOnlineServer = () => true;
+
 export function StatusIndicator() {
-  // Always render "idle" on first render (both SSR and client) so the DOM
-  // matches and React 19 doesn't throw a hydration error. The useEffect
-  // below immediately corrects the status once mounted.
-  const [status, setStatus] = useState<Status>("idle");
+  const isOnline = useSyncExternalStore(
+    subscribeOnline,
+    getIsOnline,
+    getIsOnlineServer,
+  );
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    let installing = false;
-    let online = navigator.onLine;
-
-    function apply() {
-      if (!online) setStatus("offline");
-      else if (installing) setStatus("installing");
-      else setStatus("idle");
-    }
-    apply();
-
-    function onOnline() {
-      online = true;
-      apply();
-    }
-    function onOffline() {
-      online = false;
-      apply();
-    }
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-
-    // Re-check status when the page is shown again (bfcache restore on
-    // back/forward) and when it becomes visible. Some PWAs / iOS Safari
-    // restore from bfcache without firing online/offline events, so the
-    // initial useEffect run inside the cached page may have read the
-    // wrong value. Re-polling navigator.onLine here keeps the indicator
-    // in sync after every navigation.
-    function recheck() {
-      online = navigator.onLine;
-      apply();
-    }
-    window.addEventListener("pageshow", recheck);
-    document.addEventListener("visibilitychange", recheck);
+    if (!("serviceWorker" in navigator)) return;
 
     let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+    function startInstall() {
+      if (!navigator.onLine) return;
+      setInstalling(true);
+      if (safetyTimer) clearTimeout(safetyTimer);
+      safetyTimer = setTimeout(() => setInstalling(false), 15_000);
+    }
     function clearInstall() {
-      installing = false;
+      setInstalling(false);
       if (safetyTimer) {
         clearTimeout(safetyTimer);
         safetyTimer = null;
       }
-      apply();
-    }
-    function startInstall() {
-      if (!online) return;
-      installing = true;
-      apply();
-      if (safetyTimer) clearTimeout(safetyTimer);
-      safetyTimer = setTimeout(clearInstall, 15_000);
-    }
-
-    if (!("serviceWorker" in navigator)) {
-      return () => {
-        window.removeEventListener("online", onOnline);
-        window.removeEventListener("offline", onOffline);
-        window.removeEventListener("pageshow", recheck);
-        document.removeEventListener("visibilitychange", recheck);
-      };
     }
 
     function onMessage(e: MessageEvent) {
@@ -100,14 +78,16 @@ export function StatusIndicator() {
     });
 
     return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-      window.removeEventListener("pageshow", recheck);
-      document.removeEventListener("visibilitychange", recheck);
       navigator.serviceWorker.removeEventListener("message", onMessage);
       if (safetyTimer) clearTimeout(safetyTimer);
     };
   }, []);
+
+  const status: "idle" | "installing" | "offline" = !isOnline
+    ? "offline"
+    : installing
+      ? "installing"
+      : "idle";
 
   const label =
     status === "offline"
@@ -131,4 +111,5 @@ export function StatusIndicator() {
     </span>
   );
 }
+
 
