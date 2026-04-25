@@ -39,6 +39,19 @@ export function StatusIndicator() {
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
 
+    // Re-check status when the page is shown again (bfcache restore on
+    // back/forward) and when it becomes visible. Some PWAs / iOS Safari
+    // restore from bfcache without firing online/offline events, so the
+    // initial useEffect run inside the cached page may have read the
+    // wrong value. Re-polling navigator.onLine here keeps the indicator
+    // in sync after every navigation.
+    function recheck() {
+      online = navigator.onLine;
+      apply();
+    }
+    window.addEventListener("pageshow", recheck);
+    document.addEventListener("visibilitychange", recheck);
+
     let safetyTimer: ReturnType<typeof setTimeout> | null = null;
     function clearInstall() {
       installing = false;
@@ -60,6 +73,8 @@ export function StatusIndicator() {
       return () => {
         window.removeEventListener("online", onOnline);
         window.removeEventListener("offline", onOffline);
+        window.removeEventListener("pageshow", recheck);
+        document.removeEventListener("visibilitychange", recheck);
       };
     }
 
@@ -87,6 +102,8 @@ export function StatusIndicator() {
     return () => {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
+      window.removeEventListener("pageshow", recheck);
+      document.removeEventListener("visibilitychange", recheck);
       navigator.serviceWorker.removeEventListener("message", onMessage);
       if (safetyTimer) clearTimeout(safetyTimer);
     };

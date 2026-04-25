@@ -93,7 +93,9 @@ export class ZoomLevelControl implements maplibregl.IControl {
     this._map = map;
     const el = document.createElement("div");
     el.className = "maplibregl-ctrl maplibregl-ctrl-zoom-level";
-    el.setAttribute("aria-hidden", "true");
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", "Zoomniveau");
+    el.title = "Zoomniveau";
     this._container = el;
     map.on("zoom", this._update);
     if (typeof window !== "undefined") {

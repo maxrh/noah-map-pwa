@@ -355,10 +355,15 @@ export function Map() {
     // Zoom-level badge + scale bar (bottom-left, above the filters/search bar).
     // Zoom added first so it appears on the left.
     map.addControl(new ZoomLevelControl(OFFLINE_MAX_ZOOM), "bottom-left");
-    map.addControl(
-      new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" }),
-      "bottom-left",
-    );
+    const scaleControl = new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" });
+    map.addControl(scaleControl, "bottom-left");
+    // ScaleControl has no aria/title API — annotate the rendered element.
+    const scaleEl = (scaleControl as unknown as { _container?: HTMLElement })._container;
+    if (scaleEl) {
+      scaleEl.setAttribute("role", "img");
+      scaleEl.setAttribute("aria-label", "Skala");
+      scaleEl.title = "Skala";
+    }
 
     // Live offline/online switch: clamp max zoom when offline so users
     // can't zoom past the cached tile range; restore full zoom online.
