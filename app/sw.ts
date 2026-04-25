@@ -63,9 +63,23 @@ const serwist = new Serwist({
   navigationPreload: false,
   runtimeCaching: [
     // Sheet API — SWR so groups stay fresh online and survive offline.
+    // When offline and the exact range isn't cached, return an empty array
+    // instead of throwing. The app reads groups from localStorage anyway,
+    // so a synthetic 200 keeps the console clean without affecting UX.
     {
       matcher: ({ url }) => url.pathname.startsWith("/api/sheet"),
-      handler: new StaleWhileRevalidate({ cacheName: "sheet-api" }),
+      handler: new StaleWhileRevalidate({
+        cacheName: "sheet-api",
+        plugins: [
+          {
+            handlerDidError: async () =>
+              new Response("[]", {
+                status: 200,
+                headers: { "content-type": "application/json" },
+              }),
+          },
+        ],
+      }),
     },
     // Other /api/* — never cache.
     {
@@ -137,44 +151,15 @@ const serwist = new Serwist({
           },
           {
             handlerDidError: async ({ request }) => {
-              const pathname = new URL(request.url).pathname;
-
-              // 1. Try the seed shell directly. This is the canonical
-              //    fallback and the most reliable lookup.
-              for (const [key, pattern] of Object.entries(DYNAMIC_ROUTE_SHELLS)) {
-                if (pattern.test(pathname)) {
-                  const seed = DYNAMIC_SHELL_SEEDS.find((s) =>
-                    s.startsWith(`/${key}/`),
-                  );
-                  if (seed) {
-                    const seedUrl = new URL(seed, self.location.origin).href;
-                    const direct = await caches.match(
-                      new Request(seedUrl, { headers: { RSC: "1" } }),
-                      { ignoreSearch: true, ignoreVary: true },
-                    );
-                    if (direct) return direct;
-                  }
-
-                  // 2. Iterate cache as a last resort (covers the case
-                  //    where the seed never landed but a previously-visited
-                  //    group's RSC is in cache).
-                  const cache = await caches.open(RSC_CACHE);
-                  const keys = await cache.keys();
-                  for (const cachedRequest of keys) {
-                    if (pattern.test(new URL(cachedRequest.url).pathname)) {
-                      const cached = await cache.match(cachedRequest, {
-                        ignoreVary: true,
-                      });
-                      if (cached) return cached;
-                    }
-                  }
-                }
-              }
-
-              // 3. Give up. Returning Response.error() lets Next's router
-                //    fall back to a full browser navigation (which goes
-                //    through the navigation handler and ends at the cached
-                //    HTML shell), instead of getting stuck on a blank page.
+              // For dynamic /gruppe/[slug] RSC requests we deliberately do
+              // NOT serve the seed RSC: Next's client router reads the
+              // canonical pathname from inside the RSC payload and would
+              // rewrite the URL to /gruppe/seed (showing "ikke fundet").
+              //
+              // Returning Response.error() makes Next fall back to a full
+              // browser navigation, which goes through the navigation
+              // handler → cached HTML shell → client reads slug from URL.
+              void request;
               return Response.error();
             },
           },
