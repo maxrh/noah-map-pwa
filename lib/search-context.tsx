@@ -9,7 +9,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { fetchGroups, type Group } from "@/lib/groups";
+import { fetchGroups, getCachedGroupsSync, type Group } from "@/lib/groups";
 
 interface SearchContextValue {
   query: string;
@@ -39,6 +39,11 @@ const SearchContext = createContext<SearchContextValue>({
 
 export function SearchProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
+  // Start empty + loading=true to match the SSR/precached HTML snapshot,
+  // then synchronously hydrate from localStorage in a layout effect (runs
+  // before paint). This avoids a flash of the list/detail skeleton when
+  // navigating between cached routes — cached groups are available on the
+  // very first render after mount.
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -47,6 +52,15 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const resetViewRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    // Hydrate from localStorage immediately so consumers don't flash a
+    // loading state when cached data is available.
+    const cached = getCachedGroupsSync();
+    if (cached.length > 0) {
+      setGroups(cached);
+      setLoading(false);
+    }
+    // Always still call fetchGroups: refreshes data when online, and when
+    // there's no cache yet it's the only way to populate.
     fetchGroups()
       .then(setGroups)
       .catch((err) => console.error("Failed to fetch groups:", err))

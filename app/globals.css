@@ -182,10 +182,11 @@
   animation: none !important;
 }
 
-/* Push top-right controls below the transparent header */
+/* Push top-right controls below the transparent header. Honor
+   safe-area-inset-right so they stay clear of the iPhone landscape notch. */
 .maplibregl-ctrl-top-right {
-  top: 76px;
-  right: 16px;
+  top: calc(76px + env(safe-area-inset-top));
+  right: calc(16px + env(safe-area-inset-right));
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -197,10 +198,12 @@
 
 /* Bottom-left controls (scale bar) — sit above the filter chips + search bar
    with the same 8px gap that separates the filters from the search bar.
-   Filters + search bar + bottom padding = 104px, plus 8px gap = 112px. */
+   Filters + search bar + bottom padding = 104px, plus 8px gap = 112px.
+   Honor safe-area-inset-left so controls stay clear of the iPhone landscape
+   notch / rounded corners. */
 .maplibregl-ctrl-bottom-left {
   bottom: calc(128px + env(safe-area-inset-bottom));
-  left: 16px;
+  left: calc(16px + env(safe-area-inset-left));
   display: flex;
   flex-direction: row-reverse;
   align-items: flex-end;

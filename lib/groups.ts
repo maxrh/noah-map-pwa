@@ -59,6 +59,16 @@ function getCached(): { groups: Group[]; categories: Category[] } | null {
   }
 }
 
+/**
+ * Synchronous read of cached groups for hydration. Returns [] if no cache
+ * exists (or running on the server). Lets consumers render immediately on
+ * mount instead of flashing a loading state while fetchGroups() awaits.
+ */
+export function getCachedGroupsSync(): Group[] {
+  if (typeof window === "undefined") return [];
+  return getCached()?.groups ?? [];
+}
+
 function setCache(groups: Group[], categories: Category[]) {
   try {
     const data: CachedData = {
