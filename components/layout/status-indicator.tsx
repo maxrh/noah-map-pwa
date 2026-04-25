@@ -12,17 +12,17 @@ type Status = "idle" | "installing" | "offline";
  * Both states are non-blocking; the app remains usable.
  */
 export function StatusIndicator() {
-  const [status, setStatus] = useState<Status>("idle");
-  // Tracks whether the component has mounted on the client so we don't risk
-  // a hydration mismatch by reading `navigator.onLine` on the very first render.
-  const [mounted, setMounted] = useState(false);
+  // Lazy initializer: read navigator.onLine synchronously on first render
+  // so the indicator is correct immediately after hydration (instead of
+  // briefly flashing idle on offline reload).
+  const [status, setStatus] = useState<Status>(() => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) return "offline";
+    return "idle";
+  });
 
   useEffect(() => {
-    setMounted(true);
-
     let installing = false;
-    let online =
-      typeof navigator === "undefined" ? true : navigator.onLine;
+    let online = navigator.onLine;
 
     function apply() {
       if (!online) setStatus("offline");
@@ -74,8 +74,6 @@ export function StatusIndicator() {
     }
     navigator.serviceWorker.addEventListener("message", onMessage);
 
-    // Reflect existing SW state on mount: only show installing on a true
-    // first install (no controller yet). Subsequent updates happen silently.
     navigator.serviceWorker.getRegistration().then((reg) => {
       if (!reg) return;
       if (reg.installing && !navigator.serviceWorker.controller) {
@@ -97,9 +95,6 @@ export function StatusIndicator() {
     };
   }, []);
 
-  // Avoid SSR/hydration mismatch by rendering nothing until mounted.
-  if (!mounted) return null;
-
   const label =
     status === "offline"
       ? "Offline"
@@ -113,6 +108,9 @@ export function StatusIndicator() {
       aria-live="polite"
       aria-label={label || undefined}
       title={label || undefined}
+      // suppressHydrationWarning: the server renders idle (no navigator), the
+      // client may immediately render offline. The mismatch is intentional.
+      suppressHydrationWarning
       className="inline-flex items-center text-muted-foreground"
     >
       {status === "offline" && <WifiOff className="size-4" aria-hidden="true" />}

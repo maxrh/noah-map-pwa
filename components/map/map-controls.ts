@@ -77,6 +77,67 @@ export class CompassControl {
 }
 
 // ---------------------------------------------------------------------------
+// ZoomLevelControl – read-only badge showing the current zoom level
+// ---------------------------------------------------------------------------
+
+export class ZoomLevelControl implements maplibregl.IControl {
+  private _map: maplibregl.Map | null = null;
+  private _container: HTMLElement | null = null;
+  private _offlineMaxZoom: number | null;
+
+  constructor(offlineMaxZoom: number | null = null) {
+    this._offlineMaxZoom = offlineMaxZoom;
+  }
+
+  onAdd(map: maplibregl.Map): HTMLElement {
+    this._map = map;
+    const el = document.createElement("div");
+    el.className = "maplibregl-ctrl maplibregl-ctrl-zoom-level";
+    el.setAttribute("aria-hidden", "true");
+    this._container = el;
+    map.on("zoom", this._update);
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", this._update);
+      window.addEventListener("offline", this._update);
+    }
+    this._update();
+    return el;
+  }
+
+  onRemove(): void {
+    this._map?.off("zoom", this._update);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("online", this._update);
+      window.removeEventListener("offline", this._update);
+    }
+    this._container?.remove();
+    this._container = null;
+    this._map = null;
+  }
+
+  private _update = (): void => {
+    if (!this._container || !this._map) return;
+    const zoom = this._map.getZoom();
+    const min = this._map.getMinZoom();
+    const max = this._map.getMaxZoom();
+    const EPS = 0.05;
+    const isOffline =
+      typeof navigator !== "undefined" && !navigator.onLine;
+    const atOfflineCap =
+      isOffline &&
+      this._offlineMaxZoom !== null &&
+      zoom >= this._offlineMaxZoom - EPS;
+
+    let label: string;
+    if (atOfflineCap) label = "Zoom max (offline)";
+    else if (zoom >= max - EPS) label = "Zoom max";
+    else if (zoom <= min + EPS) label = "Zoom min";
+    else label = `Zoom ${zoom.toFixed(1)}`;
+    this._container.textContent = label;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // replaceControlIcons – swap default MapLibre icons with Lucide SVGs
 // ---------------------------------------------------------------------------
 

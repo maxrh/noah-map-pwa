@@ -195,6 +195,43 @@
   margin: 0 0 0 !important;
 }
 
+/* Bottom-left controls (scale bar) — sit above the filter chips + search bar
+   with the same 8px gap that separates the filters from the search bar.
+   Filters + search bar + bottom padding = 104px, plus 8px gap = 112px. */
+.maplibregl-ctrl-bottom-left {
+  bottom: calc(128px + env(safe-area-inset-bottom));
+  left: 16px;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl {
+  margin: 0 !important;
+}
+
+.maplibregl-ctrl-scale,
+.maplibregl-ctrl-zoom-level {
+  background-color: color-mix(in srgb, var(--secondary) 60%, transparent) !important;
+  border-bottom: none !important;
+  border-radius: 0px !important;
+  color: var(--foreground) !important;
+  font-family: var(--font-sans), sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  padding: 2px 8px !important;
+}
+
+.maplibregl-ctrl-scale {
+  border-left: 1px solid var(--primary) !important;
+  border-right: 1px solid var(--primary) !important;
+}
+
+.maplibregl-ctrl-zoom-level {
+  border: none !important;
+}
+
 /* POI marker focus ring (MapLibre adds .maplibregl-marker to the same element) */
 .poi-marker:focus {
   outline: none;
