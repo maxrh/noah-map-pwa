@@ -115,7 +115,7 @@ export function SearchBar({
             spellCheck={false}
             className="text-base px-4"
           />
-          <InputGroupAddon align="inline-end" className="pr-4">
+          <InputGroupAddon align="inline-end" className="pr-4 has-[>button]:mr-0">
             {query ? (
               <button
                 type="button"
@@ -124,10 +124,10 @@ export function SearchBar({
                 onClick={() => setQuery("")}
                 className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-ring"
               >
-                <X className="h-5 w-5" />
+                <X className="size-4" />
               </button>
             ) : (
-              <Search className="h-5 w-5" />
+              <Search className="size-4" />
             )}
           </InputGroupAddon>
         </InputGroup>
