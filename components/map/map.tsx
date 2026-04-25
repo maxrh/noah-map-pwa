@@ -7,7 +7,7 @@ import { icons as lucideIcons } from "lucide";
 import type { Group } from "@/lib/groups";
 import { useSearch } from "@/lib/search-context";
 import { cn } from "@/lib/utils";
-import { CompassControl, replaceControlIcons } from "./map-controls";
+import { CompassControl, ZoomLevelControl, replaceControlIcons } from "./map-controls";
 
 const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY;
 const SOURCE_ID = "groups";
@@ -340,9 +340,18 @@ export function Map() {
       center: DENMARK_CENTER,
       zoom: INITIAL_ZOOM,
       minZoom: INITIAL_ZOOM,
+      maxZoom: 17,
     });
 
     mapRef.current = map;
+
+    // Zoom-level badge + scale bar (bottom-left, above the filters/search bar).
+    // Zoom added first so it appears on the left.
+    map.addControl(new ZoomLevelControl(), "bottom-left");
+    map.addControl(
+      new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" }),
+      "bottom-left",
+    );
 
     // Native geolocate control (top-right)
     const geolocate = new maplibregl.GeolocateControl({
@@ -466,13 +475,17 @@ export function Map() {
 
   return (
     <div
-      ref={mapContainerRef}
       className={cn(
-        "flex-1 w-full overflow-hidden transition-opacity duration-500 ease-out",
-        mapReady ? "opacity-100" : "opacity-0"
+        "relative flex-1 w-full flex flex-col overflow-hidden transition-opacity duration-500 ease-out",
+        mapReady ? "opacity-100" : "opacity-0",
       )}
-      role="application"
-      aria-label="Kort over NOAHs afdelinger"
-    />
+    >
+      <div
+        ref={mapContainerRef}
+        className="flex-1 w-full"
+        role="application"
+        aria-label="Kort over NOAHs afdelinger"
+      />
+    </div>
   );
 }
