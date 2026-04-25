@@ -26,8 +26,19 @@ function parseLocation(location: string): { lat: number; lng: number } {
   return { lat: lat || 0, lng: lng || 0 };
 }
 
+function normalizeLink(link: string): string {
+  const trimmed = link.trim();
+  if (!trimmed) return "";
+  // Already has a scheme (http://, https://, mailto:, tel:, etc.)
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  // Protocol-relative
+  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  // Bare domain like "www.facebook.com/..." — assume https
+  return `https://${trimmed}`;
+}
+
 const STORAGE_KEY = "noah-groups";
-const SCHEMA_VERSION = 1; // bump when Group/Category shape changes
+const SCHEMA_VERSION = 2; // bump when Group/Category shape changes
 
 interface CachedData {
   v: number;
@@ -100,7 +111,7 @@ async function fetchFromNetwork(): Promise<Group[]> {
       image: row[3] ?? "",
       category,
       categoryIcon: iconMap.get(category.toLowerCase()) ?? "",
-      link: row[5] ?? "",
+      link: normalizeLink(row[5] ?? ""),
       lat,
       lng,
     };
