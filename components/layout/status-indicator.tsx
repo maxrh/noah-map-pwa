@@ -13,41 +13,57 @@ type Status = "idle" | "installing" | "offline";
  */
 export function StatusIndicator() {
   const [status, setStatus] = useState<Status>("idle");
+  // Tracks whether the component has mounted on the client so we don't risk
+  // a hydration mismatch by reading `navigator.onLine` on the very first render.
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Offline detection
-    function updateOnline() {
-      if (!navigator.onLine) {
-        setStatus("offline");
-      } else {
-        setStatus((prev) => (prev === "offline" ? "idle" : prev));
-      }
-    }
-    updateOnline();
-    window.addEventListener("online", updateOnline);
-    window.addEventListener("offline", updateOnline);
+    setMounted(true);
 
-    if (!("serviceWorker" in navigator)) {
-      return () => {
-        window.removeEventListener("online", updateOnline);
-        window.removeEventListener("offline", updateOnline);
-      };
+    let installing = false;
+    let online =
+      typeof navigator === "undefined" ? true : navigator.onLine;
+
+    function apply() {
+      if (!online) setStatus("offline");
+      else if (installing) setStatus("installing");
+      else setStatus("idle");
     }
+    apply();
+
+    function onOnline() {
+      online = true;
+      apply();
+    }
+    function onOffline() {
+      online = false;
+      apply();
+    }
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
 
     let safetyTimer: ReturnType<typeof setTimeout> | null = null;
     function clearInstall() {
+      installing = false;
       if (safetyTimer) {
         clearTimeout(safetyTimer);
         safetyTimer = null;
       }
-      setStatus((prev) => (prev === "installing" ? "idle" : prev));
+      apply();
     }
     function startInstall() {
-      if (!navigator.onLine) return;
-      setStatus("installing");
-      // Safety net: never spin forever, even if the SW never sends DONE.
+      if (!online) return;
+      installing = true;
+      apply();
       if (safetyTimer) clearTimeout(safetyTimer);
       safetyTimer = setTimeout(clearInstall, 15_000);
+    }
+
+    if (!("serviceWorker" in navigator)) {
+      return () => {
+        window.removeEventListener("online", onOnline);
+        window.removeEventListener("offline", onOffline);
+      };
     }
 
     function onMessage(e: MessageEvent) {
@@ -58,12 +74,10 @@ export function StatusIndicator() {
     }
     navigator.serviceWorker.addEventListener("message", onMessage);
 
-    // Reflect existing SW state on mount.
+    // Reflect existing SW state on mount: only show installing on a true
+    // first install (no controller yet). Subsequent updates happen silently.
     navigator.serviceWorker.getRegistration().then((reg) => {
       if (!reg) return;
-      // Only show installing if there's an installing worker AND no
-      // active controller yet (= true first install). Subsequent updates
-      // happen silently in the background.
       if (reg.installing && !navigator.serviceWorker.controller) {
         startInstall();
         reg.installing.addEventListener("statechange", function handler() {
@@ -76,12 +90,15 @@ export function StatusIndicator() {
     });
 
     return () => {
-      window.removeEventListener("online", updateOnline);
-      window.removeEventListener("offline", updateOnline);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
       navigator.serviceWorker.removeEventListener("message", onMessage);
       if (safetyTimer) clearTimeout(safetyTimer);
     };
   }, []);
+
+  // Avoid SSR/hydration mismatch by rendering nothing until mounted.
+  if (!mounted) return null;
 
   const label =
     status === "offline"
@@ -105,3 +122,4 @@ export function StatusIndicator() {
     </span>
   );
 }
+

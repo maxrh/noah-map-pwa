@@ -63,6 +63,17 @@ export default function GroupDetailPage() {
   const stillBooting = loading || groups.length === 0;
   const notFound = !stillBooting && !group;
 
+  // TEMP diagnostic — remove once offline group navigation is verified.
+  if (typeof window !== "undefined") {
+    console.log("[GroupDetailPage]", {
+      slug,
+      loading,
+      groupsLen: groups.length,
+      stillBooting,
+      foundGroup: !!group,
+    });
+  }
+
   if (stillBooting)
     return (
       <div
