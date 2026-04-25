@@ -46,7 +46,7 @@ export function StatusIndicator() {
       if (!navigator.onLine) return;
       setInstalling(true);
       if (safetyTimer) clearTimeout(safetyTimer);
-      safetyTimer = setTimeout(() => setInstalling(false), 15_000);
+      safetyTimer = setTimeout(() => setInstalling(false), 60_000);
     }
     function clearInstall() {
       setInstalling(false);
