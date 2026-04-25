@@ -51,6 +51,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
           width={650}
           height={265}
           priority
+          unoptimized
           className="h-14 w-auto -translate-y-px"
         />
       </Link>
