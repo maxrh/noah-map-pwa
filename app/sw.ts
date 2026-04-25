@@ -52,6 +52,41 @@ const MAP_STYLE_URLS = [
   "https://protomaps.github.io/basemaps-assets/sprites/v4/white@2x.png",
 ].filter((u): u is string => Boolean(u));
 
+// Pre-warm a small set of overview tiles covering Denmark so the basemap
+// renders even if the user goes offline during their first session before
+// the SW could intercept any tile requests. ~20 tiles total at z5+z6.
+const DK_BBOX = { west: 8.0, south: 54.5, east: 13.0, north: 57.8 };
+const OVERVIEW_ZOOMS = [5, 6];
+
+function lonToTileX(lon: number, z: number): number {
+  return Math.floor(((lon + 180) / 360) * 2 ** z);
+}
+function latToTileY(lat: number, z: number): number {
+  const rad = (lat * Math.PI) / 180;
+  return Math.floor(
+    ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z,
+  );
+}
+
+function buildOverviewTileUrls(): string[] {
+  if (!PROTOMAPS_API_KEY) return [];
+  const urls: string[] = [];
+  for (const z of OVERVIEW_ZOOMS) {
+    const x0 = lonToTileX(DK_BBOX.west, z);
+    const x1 = lonToTileX(DK_BBOX.east, z);
+    const y0 = latToTileY(DK_BBOX.north, z);
+    const y1 = latToTileY(DK_BBOX.south, z);
+    for (let x = x0; x <= x1; x++) {
+      for (let y = y0; y <= y1; y++) {
+        urls.push(
+          `https://api.protomaps.com/tiles/v4/${z}/${x}/${y}.mvt?key=${PROTOMAPS_API_KEY}`,
+        );
+      }
+    }
+  }
+  return urls;
+}
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -296,6 +331,16 @@ self.addEventListener("install", (event) => {
                 : "protomaps-assets",
               url,
             ),
+          ),
+        );
+
+        // Pre-warm a small set of overview tiles covering Denmark so the
+        // basemap renders even if the user goes offline during their very
+        // first session (before the SW has had a chance to intercept any
+        // tile requests). ~20 tiles, fired in parallel.
+        await Promise.all(
+          buildOverviewTileUrls().map((url) =>
+            cacheCrossOrigin("protomaps-tiles", url),
           ),
         );
 

@@ -217,6 +217,7 @@
   border-bottom: none !important;
   border-radius: 0px !important;
   color: var(--foreground) !important;
+  cursor: default !important;
   font-family: var(--font-sans), sans-serif !important;
   font-size: 10px !important;
   font-weight: 500 !important;
