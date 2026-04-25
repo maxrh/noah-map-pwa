@@ -33,7 +33,7 @@ export async function generateMetadata({
   const description =
     group?.description?.slice(0, 160) ??
     `Information om ${title} – en del af NOAH.`;
-  const url = `/gruppe/${slug}`;
+  const url = `/grupper/${slug}`;
   const image = group?.image || undefined;
 
   return {

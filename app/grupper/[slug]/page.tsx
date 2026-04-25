@@ -54,8 +54,8 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
 
 export default function GroupDetailPage() {
   // Derive slug from window.location rather than usePathname()/useParams():
-  // when offline the SW serves the cached `/gruppe/seed` HTML shell for any
-  // group URL, which inlines Next router state pointing at "/gruppe/seed".
+  // when offline the SW serves the cached `/grupper/seed` HTML shell for any
+  // group URL, which inlines Next router state pointing at "/grupper/seed".
   // Both usePathname() and useParams() read that router state and would
   // return "seed" — but the browser address bar still shows the real slug,
   // so window.location is the source of truth here.
@@ -111,7 +111,7 @@ export default function GroupDetailPage() {
         description="Vi kunne ikke finde den gruppe, du leder efter."
         actions={[
           { label: "Tilbage til kort", href: "/", icon: <MoveLeft /> },
-          { label: "Se liste", href: "/liste", icon: <List /> },
+          { label: "Se liste", href: "/grupper", icon: <List /> },
         ]}
       />
     );

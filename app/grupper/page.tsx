@@ -28,7 +28,7 @@ export default function ListePage() {
   }, [loading]);
 
   // Save scroll only when navigating into a detail page – so back returns here,
-  // but using the header nav to /liste again starts fresh at the top.
+  // but using the header nav to /grupper again starts fresh at the top.
   function saveScroll() {
     const el = scrollRef.current;
     if (el) sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
@@ -102,7 +102,7 @@ export default function ListePage() {
             {items.map((group) => (
               <li key={group.slug}>
                 <Link
-                  href={`/gruppe/${group.slug}`}
+                  href={`/grupper/${group.slug}`}
                   onClick={saveScroll}
                   className="flex items-center justify-between gap-4 px-6 py-5 hover:bg-muted/50 focus-visible:bg-muted/50 transition-colors focus-ring-inset"
                 >
