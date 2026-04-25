@@ -101,6 +101,14 @@ const serwist = new Serwist({
   clientsClaim: false,
   navigationPreload: false,
   runtimeCaching: [
+    // /favicon.ico — browsers re-fetch this on every page load. Cache-first
+    // against PAGES_CACHE (where the install step puts it) keeps the network
+    // tab clean and avoids ERR_INTERNET_DISCONNECTED noise offline.
+    {
+      matcher: ({ url, sameOrigin }) =>
+        sameOrigin && url.pathname === "/favicon.ico",
+      handler: new CacheFirst({ cacheName: PAGES_CACHE }),
+    },
     // Sheet API — SWR so groups stay fresh online and survive offline.
     // When offline and the exact range isn't cached, return an empty array
     // instead of throwing. The app reads groups from localStorage anyway,
@@ -147,9 +155,12 @@ const serwist = new Serwist({
           {
             handlerDidError: async ({ request }) => {
               const pathname = new URL(request.url).pathname;
-              for (const pattern of Object.values(DYNAMIC_ROUTE_SHELLS)) {
+              for (const [name, pattern] of Object.entries(DYNAMIC_ROUTE_SHELLS)) {
                 if (pattern.test(pathname)) {
                   const cache = await caches.open(PAGES_CACHE);
+                  const seed = await cache.match(`/${name}/seed`);
+                  if (seed) return seed;
+                  // Fallback: any cached HTML matching the dynamic pattern.
                   const keys = await cache.keys();
                   for (const cachedRequest of keys) {
                     if (pattern.test(new URL(cachedRequest.url).pathname)) {
@@ -170,18 +181,18 @@ const serwist = new Serwist({
       }),
     },
     // RSC payloads — the "app shell" for client-side navigation.
-    // NetworkFirst: always try fresh from origin so RSC payloads match the
-    // current build's JS chunk hashes (a stale RSC from a previous build
-    // references chunks that no longer exist → silent hydration failure →
-    // blank page). Falls back to cache when offline.
-    // ignoreSearch strips cache-busting `?_rsc=…`; ignoreVary sidesteps
+    // StaleWhileRevalidate: serve the cached RSC instantly (near-zero nav
+    // latency) and refresh in the background. Trade-off: a freshly deployed
+    // build's first nav may run with the previous RSC for one request.
+    // Mitigated by versioned cache names (RSC_CACHE bumped on shape changes)
+    // and by cache busting via Next's `?_rsc=…` hash on real navigations.
+    // ignoreSearch strips that hash; ignoreVary sidesteps
     // Next-Router-State-Tree mismatches when matching offline fallback.
     {
       matcher: ({ request, sameOrigin }) =>
         sameOrigin && request.headers.get("RSC") === "1",
-      handler: new NetworkFirst({
+      handler: new StaleWhileRevalidate({
         cacheName: RSC_CACHE,
-        networkTimeoutSeconds: 5,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
           {
@@ -191,29 +202,27 @@ const serwist = new Serwist({
           {
             // Offline RSC fallback for dynamic /grupper/[slug] routes.
             //
-            // Serving any cached RSC matching the pattern lets Next's client
-            // router perform a normal SPA transition — no full page reload,
-            // so the persistent app shell (Header, StatusIndicator) stays
-            // mounted. The RSC payload encodes /grupper/seed as its canonical
-            // pathname, but the page reads its slug from window.location
-            // (see app/grupper/[slug]/page.tsx), so the real slug is honored.
-            //
-            // Falls back to Response.error() (→ MPA reload via navigation
-            // handler) only if no shell RSC is cached.
+            // Always serve the seed shell RSC (`/grupper/seed`) — never a
+            // real group's cached RSC. Returning a real group's RSC would
+            // merge that group's router state into the new URL, leaving
+            // the page in an inconsistent state (blank or showing wrong
+            // group). The seed shell is content-agnostic; the page reads
+            // its slug from window.location (see app/grupper/[slug]/page.tsx),
+            // so the real slug is honored regardless of which RSC ships.
             handlerDidError: async ({ request }) => {
               const pathname = new URL(request.url).pathname;
-              for (const pattern of Object.values(DYNAMIC_ROUTE_SHELLS)) {
+              for (const [name, pattern] of Object.entries(DYNAMIC_ROUTE_SHELLS)) {
                 if (pattern.test(pathname)) {
                   const cache = await caches.open(RSC_CACHE);
-                  const keys = await cache.keys();
-                  for (const cachedRequest of keys) {
-                    if (pattern.test(new URL(cachedRequest.url).pathname)) {
-                      const cached = await cache.match(cachedRequest, {
-                        ignoreVary: true,
-                      });
-                      if (cached) return cached;
-                    }
-                  }
+                  const seedUrl = new URL(
+                    `/${name}/seed`,
+                    self.location.origin,
+                  ).href;
+                  const seed = await cache.match(
+                    new Request(seedUrl, { headers: { RSC: "1" } }),
+                    { ignoreVary: true, ignoreSearch: true },
+                  );
+                  if (seed) return seed;
                 }
               }
               return Response.error();
@@ -362,6 +371,10 @@ self.addEventListener("install", (event) => {
         // outside the SW's control on some platforms — caching it here
         // guarantees no offline ERR_INTERNET_DISCONNECTED noise.
         await cachePage(pages, "/manifest.json");
+
+        // Same story for /favicon.ico — browsers fetch it on every page
+        // load and it's not in the Serwist build manifest (lives in app/).
+        await cachePage(pages, "/favicon.ico");
 
         // Pre-cache the map style descriptors (TileJSON + sprite). MapLibre
         // re-fetches these on every map init; missing them = blank basemap.
