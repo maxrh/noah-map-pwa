@@ -222,6 +222,25 @@ const serwist = new Serwist({
         ],
       }),
     },
+    // Protomaps TileJSON — `v4.json?key=…`. MapLibre re-fetches this on
+    // every map init, so it MUST be available offline or the basemap goes
+    // blank. Use ignoreSearch so the cached entry matches regardless of
+    // any subtle query-param drift between fetches.
+    {
+      matcher: ({ url }) =>
+        url.hostname === "api.protomaps.com" && url.pathname.endsWith(".json"),
+      handler: new CacheFirst({
+        cacheName: "protomaps-tiles",
+        matchOptions: { ignoreSearch: true },
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 10,
+            maxAgeSeconds: 60 * 60 * 24 * 30,
+            purgeOnQuotaError: true,
+          }),
+        ],
+      }),
+    },
     // Protomaps vector tiles
     {
       matcher: /^https:\/\/api\.protomaps\.com\/tiles\/.*/i,
@@ -236,11 +255,14 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // Protomaps fonts + sprites
+    // Protomaps fonts + sprites. ignoreSearch so any cache-busting query
+    // params don't cause misses on the sprite descriptors that MapLibre
+    // re-fetches on every map init.
     {
       matcher: /^https:\/\/protomaps\.github\.io\/basemaps-assets\/.*/i,
       handler: new CacheFirst({
         cacheName: "protomaps-assets",
+        matchOptions: { ignoreSearch: true },
         plugins: [
           new ExpirationPlugin({
             maxEntries: 100,
