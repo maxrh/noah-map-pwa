@@ -25,7 +25,7 @@ const PAGES_CACHE = "pages";
 const RSC_CACHE = "rsc";
 
 // Dynamic route patterns whose cached shells can be reused for any ID.
-// `/gruppe/[slug]` is "use client" + reads the slug via useParams() and
+// `/gruppe/[slug]` is "use client" + reads the slug via usePathname() and
 // loads group data from localStorage, so the shell HTML/RSC is identical
 // for every slug — one cached entry covers all groups.
 const DYNAMIC_ROUTE_SHELLS: Record<string, RegExp> = {
@@ -37,6 +37,20 @@ const DYNAMIC_ROUTE_SHELLS: Record<string, RegExp> = {
 // UI for unknown slugs, but the SHELL (header, layout, client bundle) is
 // identical to a real group page.
 const DYNAMIC_SHELL_SEEDS = ["/gruppe/seed"];
+
+// Map style assets MapLibre re-fetches on every map init. If any of these
+// miss the cache offline, the basemap goes blank (no tile URL template,
+// no sprite). Precaching guarantees they're available.
+const PROTOMAPS_API_KEY = process.env.NEXT_PUBLIC_PROTOMAPS_API_KEY ?? "";
+const MAP_STYLE_URLS = [
+  PROTOMAPS_API_KEY
+    ? `https://api.protomaps.com/tiles/v4.json?key=${PROTOMAPS_API_KEY}`
+    : null,
+  "https://protomaps.github.io/basemaps-assets/sprites/v4/white.json",
+  "https://protomaps.github.io/basemaps-assets/sprites/v4/white.png",
+  "https://protomaps.github.io/basemaps-assets/sprites/v4/white@2x.json",
+  "https://protomaps.github.io/basemaps-assets/sprites/v4/white@2x.png",
+].filter((u): u is string => Boolean(u));
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -227,6 +241,21 @@ async function cacheRsc(cache: Cache, route: string): Promise<boolean> {
   return false;
 }
 
+// Pre-fetch a stable cross-origin URL into the named runtime cache so it's
+// guaranteed available offline. Used for the map style / sprite descriptors
+// MapLibre re-fetches on every map init.
+async function cacheCrossOrigin(cacheName: string, url: string): Promise<void> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (res.ok) {
+      const cache = await caches.open(cacheName);
+      await cache.put(url, res);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 async function broadcast(message: { type: string; [k: string]: unknown }) {
   const clients = await self.clients.matchAll({
     type: "window",
@@ -241,6 +270,26 @@ self.addEventListener("install", (event) => {
     Promise.all([caches.open(PAGES_CACHE), caches.open(RSC_CACHE)]).then(
       async ([pages, rsc]) => {
         await broadcast({ type: "SW_INSTALL_START" });
+
+        // Belt-and-braces: explicitly cache /manifest.json. The Serwist
+        // glob in next.config covers it, but browsers re-fetch the manifest
+        // outside the SW's control on some platforms — caching it here
+        // guarantees no offline ERR_INTERNET_DISCONNECTED noise.
+        await cachePage(pages, "/manifest.json");
+
+        // Pre-cache the map style descriptors (TileJSON + sprite). MapLibre
+        // re-fetches these on every map init; missing them = blank basemap.
+        // Each URL goes into the cache its runtime handler uses.
+        await Promise.all(
+          MAP_STYLE_URLS.map((url) =>
+            cacheCrossOrigin(
+              url.includes("api.protomaps.com")
+                ? "protomaps-tiles"
+                : "protomaps-assets",
+              url,
+            ),
+          ),
+        );
 
         // Seed dynamic shells first.
         await Promise.all(

@@ -12,13 +12,10 @@ type Status = "idle" | "installing" | "offline";
  * Both states are non-blocking; the app remains usable.
  */
 export function StatusIndicator() {
-  // Lazy initializer: read navigator.onLine synchronously on first render
-  // so the indicator is correct immediately after hydration (instead of
-  // briefly flashing idle on offline reload).
-  const [status, setStatus] = useState<Status>(() => {
-    if (typeof navigator !== "undefined" && !navigator.onLine) return "offline";
-    return "idle";
-  });
+  // Always render "idle" on first render (both SSR and client) so the DOM
+  // matches and React 19 doesn't throw a hydration error. The useEffect
+  // below immediately corrects the status once mounted.
+  const [status, setStatus] = useState<Status>("idle");
 
   useEffect(() => {
     let installing = false;
@@ -108,9 +105,6 @@ export function StatusIndicator() {
       aria-live="polite"
       aria-label={label || undefined}
       title={label || undefined}
-      // suppressHydrationWarning: the server renders idle (no navigator), the
-      // client may immediately render offline. The mismatch is intentional.
-      suppressHydrationWarning
       className="inline-flex items-center text-muted-foreground"
     >
       {status === "offline" && <WifiOff className="size-4" aria-hidden="true" />}
