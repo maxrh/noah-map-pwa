@@ -138,10 +138,28 @@ const serwist = new Serwist({
           {
             handlerDidError: async ({ request }) => {
               const pathname = new URL(request.url).pathname;
-              const cache = await caches.open(RSC_CACHE);
-              const keys = await cache.keys();
-              for (const pattern of Object.values(DYNAMIC_ROUTE_SHELLS)) {
+
+              // 1. Try the seed shell directly. This is the canonical
+              //    fallback and the most reliable lookup.
+              for (const [key, pattern] of Object.entries(DYNAMIC_ROUTE_SHELLS)) {
                 if (pattern.test(pathname)) {
+                  const seed = DYNAMIC_SHELL_SEEDS.find((s) =>
+                    s.startsWith(`/${key}/`),
+                  );
+                  if (seed) {
+                    const seedUrl = new URL(seed, self.location.origin).href;
+                    const direct = await caches.match(
+                      new Request(seedUrl, { headers: { RSC: "1" } }),
+                      { ignoreSearch: true, ignoreVary: true },
+                    );
+                    if (direct) return direct;
+                  }
+
+                  // 2. Iterate cache as a last resort (covers the case
+                  //    where the seed never landed but a previously-visited
+                  //    group's RSC is in cache).
+                  const cache = await caches.open(RSC_CACHE);
+                  const keys = await cache.keys();
                   for (const cachedRequest of keys) {
                     if (pattern.test(new URL(cachedRequest.url).pathname)) {
                       const cached = await cache.match(cachedRequest, {
@@ -152,6 +170,11 @@ const serwist = new Serwist({
                   }
                 }
               }
+
+              // 3. Give up. Returning Response.error() lets Next's router
+                //    fall back to a full browser navigation (which goes
+                //    through the navigation handler and ends at the cached
+                //    HTML shell), instead of getting stuck on a blank page.
               return Response.error();
             },
           },
@@ -332,6 +355,47 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+});
+
+// On activate, delete any cache we don't recognize. Prevents accumulation
+// of orphan caches across SW updates and removes any duplicates that may
+// have appeared before this defensive cleanup existed.
+const KNOWN_CACHES = new Set<string>([
+  PAGES_CACHE,
+  RSC_CACHE,
+  "sheet-api",
+  "protomaps-tiles",
+  "protomaps-assets",
+  "external-images",
+  "next-static-js-assets",
+  "next-static-css-assets",
+  "next-static-image-assets",
+  "next-data",
+  "static-style-assets",
+  "static-font-assets",
+  "static-image-assets",
+  "static-js-assets",
+  "static-data-assets",
+  "apis",
+  "others",
+  "cross-origin",
+]);
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(
+        names.map((name) => {
+          // Keep Serwist's versioned precache (name starts with
+          // "serwist-precache-") and any cache name we explicitly know.
+          if (name.startsWith("serwist-precache-")) return;
+          if (KNOWN_CACHES.has(name)) return;
+          return caches.delete(name);
+        }),
+      );
+    })(),
+  );
 });
 
 if (process.env.NODE_ENV !== "production") {
