@@ -40,9 +40,11 @@ const DYNAMIC_SHELL_SEEDS = ["/gruppe/seed"];
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
-  // Don't claim mid-session — avoids surprise reloads when a new SW takes
-  // over while the user is interacting with the page.
-  clientsClaim: false,
+  // Take control immediately on first install so the page actually uses our
+  // runtime caching + dynamic-shell fallback, instead of waiting for every
+  // tab to close. We don't auto-reload on controllerchange, so this won't
+  // disrupt the user.
+  clientsClaim: true,
   navigationPreload: false,
   runtimeCaching: [
     // Sheet API — SWR so groups stay fresh online and survive offline.
@@ -162,9 +164,13 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // External group images
+    // External (cross-origin) images only — group photos hosted on third
+    // parties. Same-origin images (logo, icons in /public) are served from
+    // the precache by Serwist, so we must NOT intercept them here or we'd
+    // miss precache and break the logo offline.
     {
-      matcher: ({ request }) => request.destination === "image",
+      matcher: ({ request, sameOrigin }) =>
+        !sameOrigin && request.destination === "image",
       handler: new StaleWhileRevalidate({
         cacheName: "external-images",
         plugins: [
