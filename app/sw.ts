@@ -21,15 +21,19 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-const PAGES_CACHE = "pages";
-const RSC_CACHE = "rsc";
+// Bump these suffixes whenever URL keys in the cache become stale (e.g.
+// after a route rename like /gruppe/* → /grupper/*). The activate handler
+// sweeps any cache name not in KNOWN_CACHES, so old "pages"/"rsc" entries
+// from previous builds get fully discarded.
+const PAGES_CACHE = "pages-v2";
+const RSC_CACHE = "rsc-v2";
 
 // Dynamic route patterns whose cached shells can be reused for any ID.
 // `/grupper/[slug]` is "use client" + reads the slug via usePathname() and
 // loads group data from localStorage, so the shell HTML/RSC is identical
 // for every slug — one cached entry covers all groups.
 const DYNAMIC_ROUTE_SHELLS: Record<string, RegExp> = {
-  gruppe: /^\/grupper\/[^/]+$/,
+  grupper: /^\/grupper\/[^/]+$/,
 };
 
 // Seed at install time so the dynamic shell fallback always has something

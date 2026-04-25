@@ -60,7 +60,7 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
 
       <nav
         aria-label="Hovednavigation"
-        className={cn("flex items-center gap-2 shrink-0 ml-auto", transparent && "[&>*]:shadow-md")}
+        className={cn("flex items-center gap-2 shrink-0 ml-auto", transparent && "*:shadow-md")}
       >
         {isSubPage && (
           <Button
