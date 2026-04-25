@@ -159,13 +159,20 @@ const serwist = new Serwist({
                 if (pattern.test(pathname)) {
                   const cache = await caches.open(PAGES_CACHE);
                   const seed = await cache.match(`/${name}/seed`);
-                  if (seed) return seed;
+                  if (seed) {
+                    console.log(`[SW] Serving cached HTML shell for ${pathname} from /${name}/seed`);
+                    return seed;
+                  }
                   // Fallback: any cached HTML matching the dynamic pattern.
                   const keys = await cache.keys();
                   for (const cachedRequest of keys) {
-                    if (pattern.test(new URL(cachedRequest.url).pathname)) {
+                    const cachedPath = new URL(cachedRequest.url).pathname;
+                    if (pattern.test(cachedPath)) {
                       const cached = await cache.match(cachedRequest);
-                      if (cached) return cached;
+                      if (cached) {
+                        console.log(`[SW] Serving cached HTML shell for ${pathname} from ${cachedPath}`);
+                        return cached;
+                      }
                     }
                   }
                 }
@@ -173,7 +180,11 @@ const serwist = new Serwist({
               // Final fallback: app shell ("/") so the client router can
               // still take over.
               const shell = await caches.match("/");
-              if (shell) return shell;
+              if (shell) {
+                console.log(`[SW] Serving root shell ("/") for ${pathname}`);
+                return shell;
+              }
+              console.warn(`[SW] No offline fallback for ${pathname} \u2014 returning 503`);
               return new Response("Offline", { status: 503, statusText: "Offline" });
             },
           },
@@ -181,18 +192,20 @@ const serwist = new Serwist({
       }),
     },
     // RSC payloads — the "app shell" for client-side navigation.
-    // StaleWhileRevalidate: serve the cached RSC instantly (near-zero nav
-    // latency) and refresh in the background. Trade-off: a freshly deployed
-    // build's first nav may run with the previous RSC for one request.
-    // Mitigated by versioned cache names (RSC_CACHE bumped on shape changes)
-    // and by cache busting via Next's `?_rsc=…` hash on real navigations.
-    // ignoreSearch strips that hash; ignoreVary sidesteps
-    // Next-Router-State-Tree mismatches when matching offline fallback.
+    // NetworkFirst with a 2s timeout: prefer fresh from origin so RSC
+    // payloads always reference the *current* build's JS chunk hashes.
+    // A stale RSC from a previous build references chunks that no longer
+    // exist → silent hydration failure → blank page (even online!), so
+    // SWR is unsafe here. 2s is short enough to feel snappy, long enough
+    // to cover slow mobile networks before falling back to cache.
+    // ignoreSearch strips Next's `?_rsc=…` cache buster; ignoreVary
+    // sidesteps Next-Router-State-Tree mismatches when matching offline.
     {
       matcher: ({ request, sameOrigin }) =>
         sameOrigin && request.headers.get("RSC") === "1",
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: RSC_CACHE,
+        networkTimeoutSeconds: 2,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
           {
@@ -222,9 +235,13 @@ const serwist = new Serwist({
                     new Request(seedUrl, { headers: { RSC: "1" } }),
                     { ignoreVary: true, ignoreSearch: true },
                   );
-                  if (seed) return seed;
+                  if (seed) {
+                    console.log(`[SW] Serving cached RSC shell for ${pathname} from /${name}/seed`);
+                    return seed;
+                  }
                 }
               }
+              console.log(`[SW] No cached RSC for ${pathname}, triggering MPA fallback`);
               return Response.error();
             },
           },
