@@ -57,9 +57,13 @@ export default function GroupDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { groups, loading } = useSearch();
   const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
-  const notFound = !loading && !group;
+  // Stay in loading state until we actually have groups to search through.
+  // Prevents a flash of "ikke fundet" when the cached shell hydrates with an
+  // empty groups array before the localStorage read has resolved.
+  const stillBooting = loading || groups.length === 0;
+  const notFound = !stillBooting && !group;
 
-  if (loading)
+  if (stillBooting)
     return (
       <div
         className="flex flex-col md:flex-row flex-1 min-h-0"
