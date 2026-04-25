@@ -8,9 +8,9 @@ import { useSearch } from "@/lib/search-context";
 import { SearchBar } from "@/components/layout/search-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const SCROLL_KEY = "liste-scroll";
+const SCROLL_KEY = "grupper-scroll";
 
-export default function ListePage() {
+export default function GrupperPage() {
   const { query, groups, loading } = useSearch();
   const scrollRef = useRef<HTMLDivElement>(null);
 

@@ -29,7 +29,7 @@ const RSC_CACHE = "rsc";
 // loads group data from localStorage, so the shell HTML/RSC is identical
 // for every slug — one cached entry covers all groups.
 const DYNAMIC_ROUTE_SHELLS: Record<string, RegExp> = {
-  gruppe: /^\/grupper\/[^/]+$/,
+  grupper: /^\/grupper\/[^/]+$/,
 };
 
 // Seed at install time so the dynamic shell fallback always has something
