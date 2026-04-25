@@ -4,12 +4,12 @@ export const metadata: Metadata = {
   title: "Liste",
   description:
     "Se alle NOAHs lokalafdelinger og grupper i en søgbar og filtrerbar liste.",
-  alternates: { canonical: "/liste" },
+  alternates: { canonical: "/grupper" },
   openGraph: {
     title: "Liste",
     description:
       "Se alle NOAHs lokalafdelinger og grupper i en søgbar og filtrerbar liste.",
-    url: "/liste",
+    url: "/grupper",
   },
 };
 

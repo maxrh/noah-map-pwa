@@ -3,7 +3,7 @@
 
 export const PRECACHE_ROUTES = [
   "/",
-  "/liste",
+  "/grupper",
   "/om"
 ] as const;
 

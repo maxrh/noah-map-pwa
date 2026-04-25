@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, WifiOff } from "lucide-react";
 
 /**
@@ -8,35 +8,47 @@ import { Loader2, WifiOff } from "lucide-react";
  *  - "installing": shown while the SW is pre-caching pages on first install.
  *  - "offline": shown whenever the device is offline.
  * Both states are non-blocking; the app remains usable.
+ *
+ * Implementation note: previously used useSyncExternalStore, but after a
+ * hard MPA navigation (e.g. cross-layout offline nav that the SW couldn't
+ * SPA-resolve), the SSR snapshot (online) sometimes "stuck" and React
+ * never re-rendered with the real navigator.onLine value. Plain
+ * useState + useEffect is more robust here: the initial state is read on
+ * mount (always client-side) and then kept in sync via event listeners.
  */
-
-// useSyncExternalStore is React's canonical primitive for subscribing to
-// browser state. It guarantees a fresh read on every render, so the
-// indicator stays correct across hard navigations, bfcache restores, etc.
-function subscribeOnline(callback: () => void) {
-  window.addEventListener("online", callback);
-  window.addEventListener("offline", callback);
-  window.addEventListener("pageshow", callback);
-  document.addEventListener("visibilitychange", callback);
-  return () => {
-    window.removeEventListener("online", callback);
-    window.removeEventListener("offline", callback);
-    window.removeEventListener("pageshow", callback);
-    document.removeEventListener("visibilitychange", callback);
-  };
-}
-const getIsOnline = () => navigator.onLine;
-// Server snapshot: assume online so SSR markup matches the optimistic case;
-// the client immediately re-reads after mount.
-const getIsOnlineServer = () => true;
-
 export function StatusIndicator() {
-  const isOnline = useSyncExternalStore(
-    subscribeOnline,
-    getIsOnline,
-    getIsOnlineServer,
+  // Lazy initializer runs once on mount; safe to read navigator here
+  // because this component is "use client" and the parent tree never
+  // renders it during SSR-only paths.
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
   );
   const [installing, setInstalling] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+    // Run once on mount in case the lazy initial value was wrong (e.g.
+    // navigator.onLine flipped between render and effect).
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    // pageshow fires on bfcache restore AND after every full navigation,
+    // ensuring the indicator re-syncs after MPA reloads.
+    window.addEventListener("pageshow", update);
+    document.addEventListener("visibilitychange", update);
+    // Safety-net poll: after a hard reload of an offline-served HTML
+    // shell, hydration can race in ways that prevent the events above
+    // from arriving on time. A cheap 5s navigator.onLine read guarantees
+    // the indicator self-heals within a few seconds regardless.
+    const poll = setInterval(update, 5000);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+      window.removeEventListener("pageshow", update);
+      document.removeEventListener("visibilitychange", update);
+      clearInterval(poll);
+    };
+  }, []);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
