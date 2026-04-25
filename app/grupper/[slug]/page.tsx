@@ -72,7 +72,15 @@ export default function GroupDetailPage() {
   // Stay in loading state until we actually have groups to search through.
   // Prevents a flash of "ikke fundet" when the cached shell hydrates with an
   // empty groups array before the localStorage read has resolved.
-  const stillBooting = loading || groups.length === 0;
+  // Time out after 5s so we don't sit on an infinite skeleton if data never
+  // arrives (e.g. offline first-launch with no localStorage cache).
+  const [bootTimedOut, setBootTimedOut] = useState(false);
+  useEffect(() => {
+    if (!loading && groups.length > 0) return;
+    const id = window.setTimeout(() => setBootTimedOut(true), 5000);
+    return () => window.clearTimeout(id);
+  }, [loading, groups.length]);
+  const stillBooting = (loading || groups.length === 0) && !bootTimedOut;
   const notFound = !stillBooting && !group;
 
   if (stillBooting)
@@ -104,17 +112,23 @@ export default function GroupDetailPage() {
         </div>
       </div>
     );
-  if (notFound || !group)
+  if (notFound || !group) {
+    const dataMissing = groups.length === 0;
     return (
       <ErrorPage
-        title="Gruppe ikke fundet"
-        description="Vi kunne ikke finde den gruppe, du leder efter."
+        title={dataMissing ? "Gruppen kunne ikke indlæses" : "Gruppe ikke fundet"}
+        description={
+          dataMissing
+            ? "Du er offline, og gruppedata er endnu ikke gemt på enheden. Forbind til internettet og prøv igen."
+            : "Vi kunne ikke finde den gruppe, du leder efter."
+        }
         actions={[
           { label: "Tilbage til kort", href: "/", icon: <MoveLeft /> },
           { label: "Se liste", href: "/grupper", icon: <List /> },
         ]}
       />
     );
+  }
 
   return (
     <div className="flex flex-col md:flex-row flex-1 min-h-0">
