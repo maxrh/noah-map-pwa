@@ -2,9 +2,8 @@
 
 export const runtime = "edge";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { useSearch } from "@/lib/search-context";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -54,12 +53,20 @@ function GroupImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function GroupDetailPage() {
-  // Derive slug from the live URL rather than useParams(): the SW's dynamic
-  // shell fallback serves a cached RSC payload from /gruppe/seed for any
-  // un-precached group, and useParams() would return "seed" instead of the
-  // real slug from the address bar.
-  const pathname = usePathname();
-  const slug = pathname?.split("/").filter(Boolean).pop() ?? "";
+  // Derive slug from window.location rather than usePathname()/useParams():
+  // when offline the SW serves the cached `/gruppe/seed` HTML shell for any
+  // group URL, which inlines Next router state pointing at "/gruppe/seed".
+  // Both usePathname() and useParams() read that router state and would
+  // return "seed" — but the browser address bar still shows the real slug,
+  // so window.location is the source of truth here.
+  const [slug, setSlug] = useState("");
+  useEffect(() => {
+    const update = () =>
+      setSlug(window.location.pathname.split("/").filter(Boolean).pop() ?? "");
+    update();
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
+  }, []);
   const { groups, loading } = useSearch();
   const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
   // Stay in loading state until we actually have groups to search through.
