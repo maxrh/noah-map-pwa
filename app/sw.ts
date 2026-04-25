@@ -40,11 +40,11 @@ const DYNAMIC_SHELL_SEEDS = ["/gruppe/seed"];
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
-  // Take control immediately on first install so the page actually uses our
-  // runtime caching + dynamic-shell fallback, instead of waiting for every
-  // tab to close. We don't auto-reload on controllerchange, so this won't
-  // disrupt the user.
-  clientsClaim: true,
+  // Don't claim mid-session — avoids blank pages when a new SW takes over
+  // while the user is interacting with the page (RSC fetches in flight get
+  // served by the new SW with mismatched state). Offline support fully
+  // kicks in after the user closes and reopens the app once.
+  clientsClaim: false,
   navigationPreload: false,
   runtimeCaching: [
     // Sheet API — SWR so groups stay fresh online and survive offline.
