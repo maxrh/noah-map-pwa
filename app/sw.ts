@@ -185,16 +185,33 @@ const serwist = new Serwist({
               response && response.status === 200 ? response : null,
           },
           {
+            // Offline RSC fallback for dynamic /gruppe/[slug] routes.
+            //
+            // Serving any cached RSC matching the pattern lets Next's client
+            // router perform a normal SPA transition — no full page reload,
+            // so the persistent app shell (Header, StatusIndicator) stays
+            // mounted. The RSC payload encodes /gruppe/seed as its canonical
+            // pathname, but the page reads its slug from window.location
+            // (see app/gruppe/[slug]/page.tsx), so the real slug is honored.
+            //
+            // Falls back to Response.error() (→ MPA reload via navigation
+            // handler) only if no shell RSC is cached.
             handlerDidError: async ({ request }) => {
-              // For dynamic /gruppe/[slug] RSC requests we deliberately do
-              // NOT serve the seed RSC: Next's client router reads the
-              // canonical pathname from inside the RSC payload and would
-              // rewrite the URL to /gruppe/seed (showing "ikke fundet").
-              //
-              // Returning Response.error() makes Next fall back to a full
-              // browser navigation, which goes through the navigation
-              // handler → cached HTML shell → client reads slug from URL.
-              void request;
+              const pathname = new URL(request.url).pathname;
+              for (const pattern of Object.values(DYNAMIC_ROUTE_SHELLS)) {
+                if (pattern.test(pathname)) {
+                  const cache = await caches.open(RSC_CACHE);
+                  const keys = await cache.keys();
+                  for (const cachedRequest of keys) {
+                    if (pattern.test(new URL(cachedRequest.url).pathname)) {
+                      const cached = await cache.match(cachedRequest, {
+                        ignoreVary: true,
+                      });
+                      if (cached) return cached;
+                    }
+                  }
+                }
+              }
               return Response.error();
             },
           },
