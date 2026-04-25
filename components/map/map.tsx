@@ -15,6 +15,10 @@ const SOURCE_ID = "groups";
 // Denmark center coordinates
 const DENMARK_CENTER: [number, number] = [10.45, 55.6];
 const INITIAL_ZOOM = 5.7;
+const ONLINE_MAX_ZOOM = 17;
+// Offline cap: limit zoom to a range users likely have cached from prior
+// browsing (the SW caches each tile a user pans/zooms to).
+const OFFLINE_MAX_ZOOM = 13;
 
 function kebabToPascal(str: string): string {
   return str
@@ -340,18 +344,31 @@ export function Map() {
       center: DENMARK_CENTER,
       zoom: INITIAL_ZOOM,
       minZoom: INITIAL_ZOOM,
-      maxZoom: 17,
+      maxZoom:
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? OFFLINE_MAX_ZOOM
+          : ONLINE_MAX_ZOOM,
     });
 
     mapRef.current = map;
 
     // Zoom-level badge + scale bar (bottom-left, above the filters/search bar).
     // Zoom added first so it appears on the left.
-    map.addControl(new ZoomLevelControl(), "bottom-left");
+    map.addControl(new ZoomLevelControl(OFFLINE_MAX_ZOOM), "bottom-left");
     map.addControl(
       new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" }),
       "bottom-left",
     );
+
+    // Live offline/online switch: clamp max zoom when offline so users
+    // can't zoom past the cached tile range; restore full zoom online.
+    const applyMaxZoom = () => {
+      const max = navigator.onLine ? ONLINE_MAX_ZOOM : OFFLINE_MAX_ZOOM;
+      map.setMaxZoom(max);
+      if (map.getZoom() > max) map.easeTo({ zoom: max, duration: 300 });
+    };
+    window.addEventListener("online", applyMaxZoom);
+    window.addEventListener("offline", applyMaxZoom);
 
     // Native geolocate control (top-right)
     const geolocate = new maplibregl.GeolocateControl({
@@ -420,6 +437,8 @@ export function Map() {
 
     return () => {
       resizeObserver.disconnect();
+      window.removeEventListener("online", applyMaxZoom);
+      window.removeEventListener("offline", applyMaxZoom);
       compassRef.current?.destroy();
       compassRef.current = null;
       map.remove();
