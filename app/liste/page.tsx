@@ -83,7 +83,7 @@ export default function ListePage() {
     <div ref={scrollRef} className="flex-1 overflow-y-auto">
       <SearchBar
         showSuggestions={false}
-        className="fixed bottom-4 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]"
+        className="fixed bottom-4 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)] has-[input:focus]:pb-0"
       />
       {grouped.map(([category, { icon, items }]) => {
         const pascalName = icon

@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MoveRight } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import { TypographyH1, TypographyP } from "@/components/ui/typography";
 import { fetchPage, type PageContent } from "@/lib/pages";
 
@@ -108,59 +113,59 @@ export default function OmPage() {
 
       <div className="my-24" />
 
-      <dl className="space-y-4 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Version</dt>
-          <dd className="font-medium">0.1.0</dd>
-        </div>
-        <Separator />
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Build</dt>
-          <dd className="font-medium">{formatBuildTime(process.env.NEXT_PUBLIC_BUILD_TIME ?? "")}</dd>
-        </div>
-        <Separator />
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Udviklet af</dt>
-          <dd className="font-medium">
-            <a
-              href="https://monsun.dk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
-            >
-              Monsun
-            </a>
-          </dd>
-        </div>
-        <Separator />
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Kort</dt>
-          <dd className="font-medium">
-            <a
-              href="https://protomaps.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
-            >
-              Protomaps
-            </a>
-            {" © "}
-            <a
-              href="https://openstreetmap.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
-            >
-              OpenStreetMap
-            </a>
-          </dd>
-        </div>
-        <Separator />
-        <div className="flex justify-between">
-          <dt className="text-muted-foreground">Licens</dt>
-          <dd className="font-medium">MIT</dd>
-        </div>
-      </dl>
+      <Table>
+        <TableBody className="[&_td]:p-2">
+          <TableRow>
+            <TableCell className="w-full text-muted-foreground">Version</TableCell>
+            <TableCell className="text-right font-medium">0.1.0</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="w-full text-muted-foreground">Build</TableCell>
+            <TableCell className="text-right font-medium">
+              {formatBuildTime(process.env.NEXT_PUBLIC_BUILD_TIME ?? "")}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="w-full text-muted-foreground">Udviklet af</TableCell>
+            <TableCell className="text-right font-medium">
+              <a
+                href="https://monsun.dk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
+              >
+                Monsun
+              </a>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="w-full text-muted-foreground">Kort</TableCell>
+            <TableCell className="text-right font-medium">
+              <a
+                href="https://protomaps.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
+              >
+                Protomaps
+              </a>
+              {" © "}
+              <a
+                href="https://openstreetmap.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4 hover:text-foreground rounded-sm focus-ring"
+              >
+                OpenStreetMap
+              </a>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="w-full text-muted-foreground">Licens</TableCell>
+            <TableCell className="text-right font-medium">MIT</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
 
       <div className="mt-12">
         <Button

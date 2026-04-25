@@ -39,7 +39,7 @@ export default function Home() {
       >
         <Map />
       </ErrorBoundary>
-      <div className="fixed bottom-4 left-0 right-0 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed bottom-4 left-0 right-0 z-50 flex flex-col gap-2 pb-[env(safe-area-inset-bottom)] has-[input:focus]:pb-0">
         <CategoryFilter />
         <SearchBar />
       </div>
