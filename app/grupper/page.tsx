@@ -9,17 +9,27 @@ import { SearchBar } from "@/components/layout/search-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const SCROLL_KEY = "grupper-scroll";
+const RESTORE_FLAG = "grupper-restore";
 
 export default function GrupperPage() {
   const { query, groups, loading } = useSearch();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Restore previous scroll position once data is ready, then clear it so
-  // a fresh navigation (e.g. from the header) starts at the top next time.
+  // Restore previous scroll position once data is ready, but ONLY if we
+  // got here via the browser Back button from a group detail page (the
+  // detail page sets RESTORE_FLAG on its popstate handler). Forward navs
+  // — e.g. clicking "Grupper" in the header, or coming from the map —
+  // start fresh at the top.
   useEffect(() => {
     if (loading) return;
     const el = scrollRef.current;
     if (!el) return;
+    const shouldRestore = sessionStorage.getItem(RESTORE_FLAG) === "1";
+    sessionStorage.removeItem(RESTORE_FLAG);
+    if (!shouldRestore) {
+      sessionStorage.removeItem(SCROLL_KEY);
+      return;
+    }
     const saved = sessionStorage.getItem(SCROLL_KEY);
     if (saved) {
       el.scrollTop = parseInt(saved, 10) || 0;

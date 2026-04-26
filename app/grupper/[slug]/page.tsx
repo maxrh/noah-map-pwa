@@ -64,8 +64,16 @@ export default function GroupDetailPage() {
     const update = () =>
       setSlug(window.location.pathname.split("/").filter(Boolean).pop() ?? "");
     update();
+    // Mark that the *next* mount of /grupper is from a Back navigation,
+    // so the list page knows to restore the saved scroll position. Forward
+    // navs (header link, popup CTA) won't see this flag and start at top.
+    const onPop = () => sessionStorage.setItem("grupper-restore", "1");
     window.addEventListener("popstate", update);
-    return () => window.removeEventListener("popstate", update);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("popstate", onPop);
+    };
   }, []);
   const { groups, loading } = useSearch();
   const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
