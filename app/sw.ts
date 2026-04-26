@@ -222,6 +222,10 @@ const serwist = new Serwist({
         cacheName: RSC_CACHE,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
+          // On cache miss SWR still awaits network — without this, an
+          // offline first-nav to a never-visited slug hangs until the OS
+          // surfaces the offline state (multiple seconds on mobile).
+          offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
