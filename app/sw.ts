@@ -25,8 +25,8 @@ declare const self: ServiceWorkerGlobalScope;
 // after a route rename like /gruppe/* → /grupper/*). The activate handler
 // sweeps any cache name not in KNOWN_CACHES, so old "pages"/"rsc" entries
 // from previous builds get fully discarded.
-const PAGES_CACHE = "pages-v2";
-const RSC_CACHE = "rsc-v2";
+const PAGES_CACHE = "pages-v3";
+const RSC_CACHE = "rsc-v3";
 
 // Dynamic route patterns whose cached shells can be reused for any ID.
 // `/grupper/[slug]` is "use client" + reads the slug via usePathname() and
@@ -209,23 +209,19 @@ const serwist = new Serwist({
       }),
     },
     // RSC payloads — the "app shell" for client-side navigation.
-    // NetworkFirst with a 2s timeout: prefer fresh from origin so RSC
-    // payloads always reference the *current* build's JS chunk hashes.
-    // A stale RSC from a previous build references chunks that no longer
-    // exist → silent hydration failure → blank page (even online!), so
-    // SWR is unsafe here. 2s is short enough to feel snappy, long enough
-    // to cover slow mobile networks before falling back to cache.
+    // StaleWhileRevalidate: serve cache instantly (zero perceived nav lag,
+    // even on flaky mobile), then refresh in the background so the next
+    // nav uses fresh data. Trade-off: a freshly deployed RSC surfaces one
+    // navigation later — acceptable given the perf win.
     // ignoreSearch strips Next's `?_rsc=…` cache buster; ignoreVary
     // sidesteps Next-Router-State-Tree mismatches when matching offline.
     {
       matcher: ({ request, sameOrigin }) =>
         sameOrigin && request.headers.get("RSC") === "1",
-      handler: new NetworkFirst({
+      handler: new StaleWhileRevalidate({
         cacheName: RSC_CACHE,
-        networkTimeoutSeconds: 2,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
-          offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
