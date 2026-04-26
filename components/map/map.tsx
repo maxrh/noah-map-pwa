@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import { layers, namedFlavor } from "@protomaps/basemaps";
 import { icons as lucideIcons } from "lucide";
@@ -160,6 +161,33 @@ export function Map() {
   const compassRef = useRef<CompassControl | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const { query, groups, selectedCategory, registerFlyTo, registerResetView } = useSearch();
+  const router = useRouter();
+
+  // Intercept clicks on the popup "Læs mere" anchor (injected as raw HTML
+  // into MapLibre's popup, so it can't be a Next <Link>). Without this,
+  // a plain <a href> click triggers a full document navigation — the entire
+  // app reboots, SearchProvider remounts, groups refetch, no RSC cache hit.
+  // Delegating to router.push gives us SPA nav with the SW's RSC cache.
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+    function onClick(e: MouseEvent) {
+      // Respect modifier keys / middle-click — let the browser handle
+      // "open in new tab" etc. as a real navigation.
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest<HTMLAnchorElement>("a.popup-cta");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+      e.preventDefault();
+      router.push(href);
+    }
+    container.addEventListener("click", onClick);
+    return () => container.removeEventListener("click", onClick);
+  }, [router]);
 
   // Build filtered GeoJSON and update source
   const updateSource = useCallback(() => {
