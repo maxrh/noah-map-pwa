@@ -69,21 +69,8 @@ export default function GroupDetailPage() {
   }, []);
   const { groups, loading } = useSearch();
   const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
-  // Stay in loading state until we actually have groups to search through.
-  // Prevents a flash of "ikke fundet" when the cached shell hydrates with an
-  // empty groups array before the localStorage read has resolved.
-  // Time out after 5s so we don't sit on an infinite skeleton if data never
-  // arrives (e.g. offline first-launch with no localStorage cache).
-  const [bootTimedOut, setBootTimedOut] = useState(false);
-  useEffect(() => {
-    if (!loading && groups.length > 0) return;
-    const id = window.setTimeout(() => setBootTimedOut(true), 5000);
-    return () => window.clearTimeout(id);
-  }, [loading, groups.length]);
-  const stillBooting = (loading || groups.length === 0) && !bootTimedOut;
-  const notFound = !stillBooting && !group;
 
-  if (stillBooting)
+  if (loading) {
     return (
       <div
         className="flex flex-col md:flex-row flex-1 min-h-0"
@@ -91,10 +78,10 @@ export default function GroupDetailPage() {
         aria-live="polite"
         aria-label="Indlæser gruppe"
       >
-        <div className="relative h-56 md:h-auto md:w-1/2 shrink-0">
+        <div className="relative h-56 md:h-auto md:w-1/2 md:sticky md:top-0 shrink-0 md:bg-secondary">
           <Skeleton className="absolute inset-0 rounded-none" />
         </div>
-        <div className="flex-1 p-6 md:p-12">
+        <div className="flex-1 overflow-y-auto p-6 pb-16 md:p-12 md:pb-24">
           <div className="max-w-xl mx-auto">
             <Skeleton className="h-8 w-28 rounded-4xl mb-10" />
             <Skeleton className="h-9 w-3/4 mb-3" />
@@ -104,7 +91,7 @@ export default function GroupDetailPage() {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-2/3" />
             </div>
-            <div className="flex gap-1 mt-6">
+            <div className="flex flex-wrap gap-1 mt-6">
               <Skeleton className="h-10 w-36" />
               <Skeleton className="h-10 w-44" />
             </div>
@@ -112,7 +99,9 @@ export default function GroupDetailPage() {
         </div>
       </div>
     );
-  if (notFound || !group) {
+  }
+
+  if (!group) {
     const dataMissing = groups.length === 0;
     return (
       <ErrorPage
