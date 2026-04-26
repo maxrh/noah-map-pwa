@@ -80,8 +80,14 @@ export default function OmPage() {
         {loading ? (
           <>
             <Skeleton className="h-9 w-2/5 mb-3" />
-            <Skeleton className="h-5 w-full mb-2" />
-            <Skeleton className="h-5 w-4/5" />
+            <Skeleton className="h-6 w-4/5 mb-2" />
+            <Skeleton className="h-6 w-2/3" />
+            <div className="space-y-2 mt-4">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-3/4" />
+            </div>
+            <Skeleton className="h-10 w-44 mt-6" />
           </>
         ) : (
           <>

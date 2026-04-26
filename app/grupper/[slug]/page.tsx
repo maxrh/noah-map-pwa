@@ -91,10 +91,10 @@ export default function GroupDetailPage() {
         aria-live="polite"
         aria-label="Indlæser gruppe"
       >
-        <div className="relative h-56 md:h-auto md:w-1/2 shrink-0">
+        <div className="relative h-56 md:h-auto md:w-1/2 md:sticky md:top-0 shrink-0 md:bg-secondary">
           <Skeleton className="absolute inset-0 rounded-none" />
         </div>
-        <div className="flex-1 p-6 md:p-12">
+        <div className="flex-1 overflow-y-auto p-6 pb-16 md:p-12 md:pb-24">
           <div className="max-w-xl mx-auto">
             <Skeleton className="h-8 w-28 rounded-4xl mb-10" />
             <Skeleton className="h-9 w-3/4 mb-3" />
@@ -104,7 +104,7 @@ export default function GroupDetailPage() {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-2/3" />
             </div>
-            <div className="flex gap-1 mt-6">
+            <div className="flex flex-wrap gap-1 mt-6">
               <Skeleton className="h-10 w-36" />
               <Skeleton className="h-10 w-44" />
             </div>

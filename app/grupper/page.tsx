@@ -57,6 +57,7 @@ export default function GrupperPage() {
   }, [filtered]);
 
   if (loading) {
+    const groupSkeletons: number[] = [4, 3];
     return (
       <div
         className="flex-1 overflow-y-auto"
@@ -64,17 +65,29 @@ export default function GrupperPage() {
         aria-live="polite"
         aria-label="Indlæser liste"
       >
-        <ul className="divide-y divide-border">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <li key={i} className="flex items-center justify-between gap-4 px-6 py-5">
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-5 w-3/5" />
-                <Skeleton className="h-4 w-2/5" />
-              </div>
-              <Skeleton className="h-4 w-4 shrink-0" />
-            </li>
-          ))}
-        </ul>
+        {groupSkeletons.map((count, gi) => (
+          <div key={gi}>
+            <div className="sticky top-0 z-10 bg-secondary px-6 py-3 flex items-center gap-2">
+              <Skeleton className="size-4" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <ul className="divide-y divide-border">
+              {Array.from({ length: count }).map((_, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between gap-4 px-6 py-5"
+                >
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-5 w-3/5" />
+                    <Skeleton className="h-4 w-2/5" />
+                  </div>
+                  <Skeleton className="size-4 shrink-0" />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <div aria-hidden className="h-24" />
       </div>
     );
   }
