@@ -26,7 +26,7 @@ declare const self: ServiceWorkerGlobalScope;
 // sweeps any cache name not in KNOWN_CACHES, so old "pages"/"rsc" entries
 // from previous builds get fully discarded.
 const PAGES_CACHE = "pages-v3";
-const RSC_CACHE = "rsc-v3";
+const RSC_CACHE = "rsc-v4";
 
 // Dynamic route patterns whose cached shells can be reused for any ID.
 // `/grupper/[slug]` is "use client" + reads the slug via usePathname() and
@@ -216,8 +216,17 @@ const serwist = new Serwist({
     // ignoreSearch strips Next's `?_rsc=…` cache buster; ignoreVary
     // sidesteps Next-Router-State-Tree mismatches when matching offline.
     {
+      // IMPORTANT: exclude prefetch RSC requests (Next-Router-Prefetch: 1).
+      // Next sends partial RSC payloads for prefetches (loading boundary
+      // only); caching them and replaying on a real click commits an
+      // incomplete tree → blank page. Prefetches fall through to the
+      // default network handler so they still warm Next's in-memory cache
+      // without polluting our SW cache. Real (non-prefetch) RSC nav uses
+      // SWR for instant cached responses.
       matcher: ({ request, sameOrigin }) =>
-        sameOrigin && request.headers.get("RSC") === "1",
+        sameOrigin &&
+        request.headers.get("RSC") === "1" &&
+        request.headers.get("Next-Router-Prefetch") !== "1",
       handler: new StaleWhileRevalidate({
         cacheName: RSC_CACHE,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
