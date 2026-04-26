@@ -5,7 +5,6 @@ import { defaultCache } from "@serwist/next/worker";
 import {
   Serwist,
   StaleWhileRevalidate,
-  NetworkFirst,
   CacheFirst,
   ExpirationPlugin,
   type PrecacheEntry,
@@ -92,9 +91,9 @@ function buildOverviewTileUrls(): string[] {
 }
 
 // Plugin: short-circuit network when navigator.onLine === false.
-// Throws synchronously before fetch is attempted, so NetworkFirst falls
-// back to its cache (or handlerDidError) immediately. Without this, iOS
-// Safari can sit on a hung fetch for the full networkTimeoutSeconds even
+// Throws synchronously before fetch is attempted, so the runtime caching
+// handler falls back to its cache (or handlerDidError) immediately.
+// Without this, iOS Safari can sit on a hung fetch for a long time even
 // though the device knows it's offline.
 const offlineShortcut = {
   requestWillFetch: async ({ request }: { request: Request }) => {
@@ -152,18 +151,19 @@ const serwist = new Serwist({
         }
       })(),
     },
-    // Navigation requests (HTML) — NetworkFirst so the served HTML always
-    // references the current build's JS chunks. Falls back to cache only
-    // when offline, with a smart fallback for unknown dynamic routes.
-    // Short timeout (2s) so iOS Safari doesn't sit on a hung fetch when
-    // offline — the OS is slow to surface offline state to fetch().
+    // Navigation requests (HTML) — StaleWhileRevalidate to match RSC.
+    // Cached HTML serves instantly; refresh happens in the background.
+    // Next chunks are content-hashed and immutable, so a stale HTML
+    // referencing already-fetched chunk URLs hydrates fine — the next
+    // full reload picks up the latest deploy.
     {
       matcher: ({ request }) =>
         request.mode === "navigate" && !request.headers.get("RSC"),
-      handler: new NetworkFirst({
+      handler: new StaleWhileRevalidate({
         cacheName: PAGES_CACHE,
-        networkTimeoutSeconds: 2,
         plugins: [
+          // On cache miss SWR awaits network — short-circuit when offline
+          // so we hit handlerDidError immediately instead of timing out.
           offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
@@ -222,6 +222,10 @@ const serwist = new Serwist({
         cacheName: RSC_CACHE,
         matchOptions: { ignoreSearch: true, ignoreVary: true },
         plugins: [
+          // On cache miss SWR still awaits network — without this, an
+          // offline first-nav to a never-visited slug hangs until the OS
+          // surfaces the offline state (multiple seconds on mobile).
+          offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
