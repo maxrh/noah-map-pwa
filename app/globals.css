@@ -36,6 +36,24 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+@layer base {
+  /* Snappier taps on iOS:
+     - touch-callout: none  → kills long-press link preview popover that
+       can intercept the first tap and make it feel unresponsive.
+     - tap-highlight-color: transparent → removes the grey flash; we
+       provide our own :active styles.
+     - touch-action: manipulation → eliminates the 300ms double-tap-zoom
+       delay on links/buttons. */
+  a,
+  button,
+  [role="button"],
+  [role="link"] {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
