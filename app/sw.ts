@@ -5,6 +5,7 @@ import { defaultCache } from "@serwist/next/worker";
 import {
   Serwist,
   StaleWhileRevalidate,
+  NetworkFirst,
   CacheFirst,
   ExpirationPlugin,
   type PrecacheEntry,
@@ -151,19 +152,18 @@ const serwist = new Serwist({
         }
       })(),
     },
-    // Navigation requests (HTML) — StaleWhileRevalidate to match RSC.
-    // Cached HTML serves instantly; refresh happens in the background.
-    // Next chunks are content-hashed and immutable, so a stale HTML
-    // referencing already-fetched chunk URLs hydrates fine — the next
-    // full reload picks up the latest deploy.
+    // Navigation requests (HTML) — NetworkFirst with a short timeout so
+    // hard reloads always reflect the latest deploy when online, but fall
+    // back to cache instantly when offline. In-app navigation uses RSC
+    // (handled below with SWR), so navigation HTML is only hit on first
+    // visit / hard reload — making perf less critical than correctness.
     {
       matcher: ({ request }) =>
         request.mode === "navigate" && !request.headers.get("RSC"),
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: PAGES_CACHE,
+        networkTimeoutSeconds: 2,
         plugins: [
-          // On cache miss SWR awaits network — short-circuit when offline
-          // so we hit handlerDidError immediately instead of timing out.
           offlineShortcut,
           {
             cacheWillUpdate: async ({ response }) =>
