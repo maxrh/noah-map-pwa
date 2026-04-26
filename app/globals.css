@@ -254,7 +254,7 @@
   outline-offset: -3px !important;
 }
 
-/* Popup "Læs mere" CTA */
+/* Popup "Læs mere" CTA – matches Button variant="secondary" */
 .popup-cta {
   display: inline-flex;
   align-items: center;
@@ -271,8 +271,9 @@
   border: none;
   outline: none;
 }
-.popup-cta:hover {
-  background: var(--muted);
+.popup-cta:hover,
+.popup-cta:active {
+  background: var(--border);
 }
 .popup-cta:focus-visible {
   box-shadow: 0 0 0 3px var(--ring);

@@ -76,16 +76,24 @@ export function Header({ transparent = false }: { transparent?: boolean }) {
         <Link
           href="/om"
           aria-label="Om appen"
+          aria-current={pathname === "/om" ? "page" : undefined}
           title="Om appen"
-          className={buttonVariants({ variant: "secondary", size: "icon" })}
+          className={cn(
+            buttonVariants({ variant: "secondary", size: "icon" }),
+            "aria-[current=page]:bg-border"
+          )}
         >
           <Info className="size-5" />
         </Link>
         <Link
           href="/grupper"
           aria-label="Listevisning"
+          aria-current={pathname === "/grupper" ? "page" : undefined}
           title="Listevisning"
-          className={buttonVariants({ variant: "secondary", size: "icon" })}
+          className={cn(
+            buttonVariants({ variant: "secondary", size: "icon" }),
+            "aria-[current=page]:bg-border"
+          )}
         >
           <List className="size-5" />
         </Link>
