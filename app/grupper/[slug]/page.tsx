@@ -69,21 +69,8 @@ export default function GroupDetailPage() {
   }, []);
   const { groups, loading } = useSearch();
   const group = useMemo(() => groups.find((g) => g.slug === slug) ?? null, [groups, slug]);
-  // Stay in loading state until we actually have groups to search through.
-  // Prevents a flash of "ikke fundet" when the cached shell hydrates with an
-  // empty groups array before the localStorage read has resolved.
-  // Time out after 5s so we don't sit on an infinite skeleton if data never
-  // arrives (e.g. offline first-launch with no localStorage cache).
-  const [bootTimedOut, setBootTimedOut] = useState(false);
-  useEffect(() => {
-    if (!loading && groups.length > 0) return;
-    const id = window.setTimeout(() => setBootTimedOut(true), 5000);
-    return () => window.clearTimeout(id);
-  }, [loading, groups.length]);
-  const stillBooting = (loading || groups.length === 0) && !bootTimedOut;
-  const notFound = !stillBooting && !group;
 
-  if (stillBooting)
+  if (loading) {
     return (
       <div
         className="flex flex-col md:flex-row flex-1 min-h-0"
@@ -112,7 +99,9 @@ export default function GroupDetailPage() {
         </div>
       </div>
     );
-  if (notFound || !group) {
+  }
+
+  if (!group) {
     const dataMissing = groups.length === 0;
     return (
       <ErrorPage
